@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const FROM_EMAIL = 'envio@fotografiaescolar.duploefeito.com'
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,9 +19,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not set')
-    }
+    const client = new SMTPClient({
+      connection: {
+        hostname: "fotografiaescolar.duploefeito.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "envio@fotografiaescolar.duploefeito.com",
+          password: Deno.env.get('SMTP_PASSWORD'),
+        },
+      },
+    });
 
     const { orderId, type, html } = await req.json() as EmailRequest
     console.log(`Processing ${type} email for order ${orderId}`)
@@ -60,38 +66,29 @@ const handler = async (req: Request): Promise<Response> => {
       `
     }
 
-    console.log('Sending email with Resend:', {
+    console.log('Sending email:', {
       to,
       subject: `${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}`,
       html: emailHtml
     })
 
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+    const send = await client.send({
+      from: "envio@fotografiaescolar.duploefeito.com",
+      to: to,
+      subject: `${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}`,
+      html: emailHtml,
+    });
+
+    console.log("Email sent successfully:", send)
+    
+    await client.close();
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to,
-        subject: `${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}`,
-        html: emailHtml,
-      }),
-    })
-
-    if (!res.ok) {
-      const error = await res.text()
-      console.error('Resend API error:', error)
-      throw new Error(`Resend API error: ${error}`)
-    }
-
-    const data = await res.json()
-    console.log('Email sent successfully:', data)
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    )
 
   } catch (error) {
     console.error('Error in send-order-email function:', error)
