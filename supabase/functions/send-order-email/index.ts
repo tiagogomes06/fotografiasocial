@@ -21,12 +21,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { orderId, type, html } = await req.json() as EmailRequest
-    console.log(`Processing ${type} email for order ${orderId}`)
-
     if (!RESEND_API_KEY) {
       throw new Error('RESEND_API_KEY is not set')
     }
+
+    const { orderId, type, html } = await req.json() as EmailRequest
+    console.log(`Processing ${type} email for order ${orderId}`)
 
     // Get order details from database if html is not provided
     let emailHtml = html
@@ -47,10 +47,16 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Failed to fetch order: ${error?.message || 'Order not found'}`)
       }
 
+      if (!order.email) {
+        throw new Error('Order has no email address')
+      }
+
       to = [order.email]
       emailHtml = `
         <h2>${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}</h2>
         <p>Total: ${order.total_amount}€</p>
+        <p>Estado: ${order.status}</p>
+        <p>Data: ${new Date().toLocaleString('pt-PT')}</p>
       `
     }
 
