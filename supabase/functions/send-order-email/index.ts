@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { createEmailTemplate } from './emailTemplates.ts'
 
 const corsHeaders = {
@@ -17,9 +18,10 @@ serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const smtpPassword = Deno.env.get('SMTP_PASSWORD')!;
     
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('[send-order-email] Missing Supabase configuration');
+    if (!supabaseUrl || !supabaseKey || !smtpPassword) {
+      console.error('[send-order-email] Missing configuration');
       throw new Error('Server configuration error');
     }
     
@@ -28,6 +30,19 @@ serve(async (req) => {
 
     const { orderId, type } = await req.json();
     console.log(`[send-order-email] Processing ${type} email for order: ${orderId}`);
+
+    // Create SMTP client
+    const client = new SMTPClient({
+      connection: {
+        hostname: "fotografiaescolar.duploefeito.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "envio@fotografiaescolar.duploefeito.com",
+          password: smtpPassword,
+        },
+      },
+    });
 
     // Fetch order details with all related information
     const { data: order, error: orderError } = await supabase
@@ -69,28 +84,38 @@ serve(async (req) => {
       throw new Error('No email address associated with order');
     }
 
-    // Generate email content
-    console.log('[send-order-email] Generating email template...');
-    const html = createEmailTemplate(order, type);
+    // Generate email content for customer
+    console.log('[send-order-email] Generating customer email template...');
+    const customerHtml = createEmailTemplate(order, type);
 
     // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
-    const { error: emailError } = await supabase.functions.invoke('send-email', {
-      body: { 
-        to: order.email,
-        subject: type === 'created' ? 
-          `Confirmação de Encomenda #${orderId}` : 
-          `Pagamento Confirmado - Encomenda #${orderId}`,
-        html: html
-      }
+    await client.send({
+      from: "envio@fotografiaescolar.duploefeito.com",
+      to: order.email,
+      subject: type === 'created' ? 
+        `Confirmação de Encomenda #${orderId}` : 
+        `Pagamento Confirmado - Encomenda #${orderId}`,
+      html: customerHtml,
     });
 
-    if (emailError) {
-      console.error('[send-order-email] Error sending email:', emailError);
-      throw emailError;
+    // If payment is completed, also send notification to admin
+    if (type === 'paid') {
+      console.log('[send-order-email] Generating admin notification email...');
+      const adminHtml = createEmailTemplate(order, type, true);
+      
+      await client.send({
+        from: "envio@fotografiaescolar.duploefeito.com",
+        to: "envio@fotografiaescolar.duploefeito.com",
+        subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
+        html: adminHtml,
+      });
+      
+      console.log('[send-order-email] Admin notification sent');
     }
 
-    console.log('[send-order-email] Email sent successfully');
+    await client.close();
+    console.log('[send-order-email] SMTP client closed');
 
     return new Response(
       JSON.stringify({ success: true }),
