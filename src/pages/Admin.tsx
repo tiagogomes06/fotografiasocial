@@ -127,18 +127,22 @@ const Admin = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="py-6 px-4 border-b border-border/40 backdrop-blur-sm fixed w-full top-0 z-50 bg-background/80">
+      <header className="py-4 md:py-6 px-4 border-b border-border/40 backdrop-blur-sm fixed w-full top-0 z-50 bg-background/80">
         <div className="container flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-semibold">Admin Dashboard</h1>
         </div>
       </header>
 
-      <main className="container pt-32 pb-16 space-y-8">
+      <main className="container pt-24 md:pt-32 pb-8 md:pb-16 px-4 space-y-6 md:space-y-8">
         {!selectedSchool && (
           <SchoolsSection
             schools={schools}
