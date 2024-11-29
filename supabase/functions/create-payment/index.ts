@@ -28,7 +28,25 @@ serve(async (req) => {
     const { orderId, paymentMethod, email, name } = await req.json()
     console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
-    // Fetch the order with all related data
+    // First verify the order exists
+    const { data: orderExists, error: orderExistsError } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .single()
+
+    if (orderExistsError || !orderExists) {
+      console.error('Order existence check failed:', orderExistsError)
+      return new Response(
+        JSON.stringify({ error: `Order not found: ${orderExistsError?.message || 'No order found'}` }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Fetch the complete order with all related data
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -38,16 +56,16 @@ serve(async (req) => {
           products (*),
           photos (*)
         ),
-        students (*),
-        shipping_method (*)
+        shipping_methods!inner (*),
+        students (*)
       `)
       .eq('id', orderId)
       .single()
 
     if (orderError || !order) {
-      console.error('Error fetching order:', orderError)
+      console.error('Error fetching order details:', orderError)
       return new Response(
-        JSON.stringify({ error: 'Order not found' }),
+        JSON.stringify({ error: `Failed to fetch order details: ${orderError?.message}` }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -73,15 +91,15 @@ serve(async (req) => {
           quantity: 1,
         }))
 
-        if (order.shipping_method && order.shipping_method.price > 0) {
+        if (order.shipping_methods && order.shipping_methods.price > 0) {
           lineItems.push({
             price_data: {
               currency: 'eur',
               product_data: {
                 name: 'Shipping',
-                description: order.shipping_method.name,
+                description: order.shipping_methods.name,
               },
-              unit_amount: Math.round(order.shipping_method.price * 100),
+              unit_amount: Math.round(order.shipping_methods.price * 100),
             },
             quantity: 1,
           })
