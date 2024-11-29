@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import CartSummary from "@/components/store/CartSummary";
 import CheckoutForm from "@/components/store/CheckoutForm";
-import { CartItem, Product } from "@/types/admin";
 import { toast } from "sonner";
 
 const Cart = () => {
@@ -12,6 +11,14 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cart = [], products = [] } = location.state || {};
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  useEffect(() => {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/');
+    }
+  }, [navigate]);
 
   const handleBackToStore = () => {
     navigate(-1);
@@ -23,7 +30,8 @@ const Cart = () => {
       return;
     }
 
-    if (!cart[0]?.studentId) {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
       navigate('/');
       return;

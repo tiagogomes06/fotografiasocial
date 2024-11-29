@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -27,7 +28,13 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   };
 
   const goToStore = () => {
-    navigate('/store', { state: { photos, studentName } });
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/');
+      return;
+    }
+    navigate('/store', { state: { photos, studentName, studentId } });
   };
 
   return (

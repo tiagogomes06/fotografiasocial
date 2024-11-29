@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,10 +11,18 @@ import { CartItem, Product } from "@/types/admin";
 const Store = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { photos, studentId } = location.state || { photos: [], studentId: "" };
+  const { photos = [] } = location.state || {};
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [productSelections, setProductSelections] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const studentId = localStorage.getItem('studentId');
+    if (!studentId) {
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/');
+    }
+  }, [navigate]);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
@@ -53,6 +61,7 @@ const Store = () => {
   };
 
   const addToCart = () => {
+    const studentId = localStorage.getItem('studentId');
     if (!studentId) {
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
       navigate('/');

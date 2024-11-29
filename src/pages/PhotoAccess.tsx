@@ -2,10 +2,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { QrCode, Key } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import PhotoGallery from "@/components/PhotoGallery";
 import { supabase } from "@/integrations/supabase/client";
 
 const PhotoAccess = () => {
+  const navigate = useNavigate();
   const [accessCode, setAccessCode] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [studentName, setStudentName] = useState("");
@@ -39,6 +41,8 @@ const PhotoAccess = () => {
       setPhotos(photoData.map(p => p.url));
       setStudentName(student.name);
       setIsAuthenticated(true);
+      localStorage.setItem('studentId', student.id);
+      localStorage.setItem('studentName', student.name);
       toast.success("Acesso concedido!");
     } catch (error) {
       toast.error("Ocorreu um erro");
