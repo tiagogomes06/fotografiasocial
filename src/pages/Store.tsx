@@ -37,7 +37,7 @@ const Store = () => {
         : [...prev, photoUrl]
     );
 
-    if (!selectedPhotos.includes(photoUrl)) {
+    if (selectedPhotos.includes(photoUrl)) {
       setProductSelections(prev => {
         const newSelections = { ...prev };
         delete newSelections[photoUrl];
