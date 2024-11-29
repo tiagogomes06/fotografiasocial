@@ -94,6 +94,15 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          payment_id: string | null
+          payment_method: string | null
+          payment_status: string | null
+          shipping_address: string | null
+          shipping_city: string | null
+          shipping_method_id: string | null
+          shipping_name: string | null
+          shipping_phone: string | null
+          shipping_postal_code: string | null
           status: string
           student_id: string
           total_amount: number
@@ -101,6 +110,15 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_method_id?: string | null
+          shipping_name?: string | null
+          shipping_phone?: string | null
+          shipping_postal_code?: string | null
           status?: string
           student_id: string
           total_amount: number
@@ -108,11 +126,27 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          payment_id?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_method_id?: string | null
+          shipping_name?: string | null
+          shipping_phone?: string | null
+          shipping_postal_code?: string | null
           status?: string
           student_id?: string
           total_amount?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_shipping_method_id_fkey"
+            columns: ["shipping_method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_student_id_fkey"
             columns: ["student_id"]
@@ -190,6 +224,33 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      shipping_methods: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price?: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          type?: string
         }
         Relationships: []
       }

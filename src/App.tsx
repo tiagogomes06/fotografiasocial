@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import PhotoAccess from "./pages/PhotoAccess";
 import Admin from "./pages/Admin";
 import Store from "./pages/Store";
+import Cart from "./pages/Cart";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/access" element={<PhotoAccess />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/store" element={<Store />} />
+            <Route path="/cart" element={<Cart />} />
           </Routes>
         </AnimatePresence>
       </BrowserRouter>

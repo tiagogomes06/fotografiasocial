@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import PhotoCard from "@/components/store/PhotoCard";
-import CartSummary from "@/components/store/CartSummary";
 import { CartItem, Product } from "@/types/admin";
 
 const Store = () => {
@@ -17,7 +16,7 @@ const Store = () => {
   const [productSelections, setProductSelections] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: products = [] } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,8 +70,8 @@ const Store = () => {
     toast.success("Itens adicionados ao carrinho");
   };
 
-  const proceedToCheckout = () => {
-    toast.info("Funcionalidade de checkout em breve!");
+  const goToCart = () => {
+    navigate('/cart', { state: { cart, products } });
   };
 
   return (
@@ -87,6 +86,11 @@ const Store = () => {
             <ArrowLeft className="h-4 w-4" />
             Voltar
           </Button>
+          {cart.length > 0 && (
+            <Button onClick={goToCart}>
+              Ver Carrinho ({cart.length})
+            </Button>
+          )}
         </div>
 
         <div className="bg-muted/30 p-4 rounded-lg border border-border/50 mb-6">
@@ -121,14 +125,6 @@ const Store = () => {
               </Button>
             </div>
           </div>
-        )}
-
-        {cart.length > 0 && (
-          <CartSummary
-            cart={cart}
-            products={products}
-            onCheckout={proceedToCheckout}
-          />
         )}
       </div>
     </div>

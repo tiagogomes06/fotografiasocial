@@ -13,13 +13,13 @@ const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
   const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <Card className="mt-8">
+    <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Carrinho de Compras</h3>
           <Button onClick={onCheckout} disabled={cart.length === 0} className="gap-2">
             <ShoppingCart className="h-4 w-4" />
-            Finalizar ({totalAmount.toFixed(2)}€)
+            Finalizar Compra ({totalAmount.toFixed(2)}€)
           </Button>
         </div>
         
