@@ -14,6 +14,34 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+async function sendEmail(to: string[], subject: string, html: string) {
+  console.log(`Attempting to send email to: ${to.join(', ')}`)
+  
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error(`Failed to send email to ${to.join(', ')}:`, errorText)
+    throw new Error(`Failed to send email: ${errorText}`)
+  }
+
+  const result = await response.json()
+  console.log(`Successfully sent email to ${to.join(', ')}:`, result)
+  return result
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -21,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { orderId, type } = await req.json()
-    console.log(`Sending ${type} email for order ${orderId}`)
+    console.log(`Processing order email for order ${orderId}, type: ${type}`)
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -48,8 +76,11 @@ const handler = async (req: Request): Promise<Response> => {
       .single()
 
     if (orderError || !order) {
+      console.error('Error fetching order:', orderError)
       throw new Error(`Error fetching order: ${orderError?.message || 'Order not found'}`)
     }
+
+    console.log('Successfully fetched order data')
 
     const orderItemsHtml = order.order_items.map(item => `
       <tr>
@@ -95,38 +126,10 @@ const handler = async (req: Request): Promise<Response> => {
     `
 
     // Send email to customer
-    const customerResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [order.email],
-        subject,
-        html: emailHtml,
-      }),
-    })
-
+    await sendEmail([order.email], subject, emailHtml)
+    
     // Send email to admin
-    const adminResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [ADMIN_EMAIL],
-        subject,
-        html: emailHtml,
-      }),
-    })
-
-    if (!customerResponse.ok || !adminResponse.ok) {
-      throw new Error('Failed to send emails')
-    }
+    await sendEmail([ADMIN_EMAIL], subject, emailHtml)
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -134,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
     )
 
   } catch (error) {
-    console.error('Error sending order email:', error)
+    console.error('Error in send-order-email function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
