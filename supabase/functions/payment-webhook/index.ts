@@ -11,62 +11,100 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 interface EuPagoWebhookPayload {
-  valor?: string;           // Payment amount
-  canal?: string;          // Channel name
-  referencia?: string;     // Reference number
-  transacao?: string;      // Transaction ID
-  identificador?: string;  // Order ID in our system
-  mp?: string;            // Payment Method Code
-  chave_api?: string;     // API Key used
-  data?: string;          // Payment date (YYYY-MM-DD:hh:mm)
-  entidade?: string;      // Entity
-  comissao?: string;      // Payment Fee
-  local?: string;         // Payment City
+  valor?: string;
+  canal?: string;
+  referencia?: string;
+  transacao?: string;
+  identificador?: string;
+  mp?: string;
+  chave_api?: string;
+  data?: string;
+  entidade?: string;
+  comissao?: string;
+  local?: string;
 }
 
-async function updateOrderStatus(orderId: string, status: string, paymentDetails: Partial<EuPagoWebhookPayload>) {
-  console.log(`Updating order ${orderId} with status ${status} and details:`, paymentDetails);
-  
-  const updateData: any = { 
-    payment_status: status,
-    payment_id: paymentDetails.transacao
-  };
+async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
+  try {
+    const emailHtml = `
+      <h2>Pagamento Confirmado - Encomenda #${orderId}</h2>
+      <p>O seu pagamento foi confirmado com sucesso!</p>
+      <p>Detalhes da encomenda:</p>
+      <ul>
+        <li>Total: ${orderDetails.total_amount}€</li>
+        <li>Estado: Pago</li>
+        <li>Data de pagamento: ${new Date().toLocaleString('pt-PT')}</li>
+      </ul>
+      <p>Obrigado pela sua compra!</p>
+    `;
 
-  const { error } = await supabase
-    .from('orders')
-    .update(updateData)
-    .eq('id', orderId);
-
-  if (error) {
-    console.error('Error updating order status:', error);
-    throw error;
-  }
-
-  // Send payment confirmation email
-  if (status === 'completed') {
     const { error: emailError } = await supabase.functions.invoke('send-order-email', {
       body: { 
         orderId,
-        type: 'paid'
+        type: 'paid',
+        html: emailHtml
       }
     });
 
     if (emailError) {
       console.error('Error sending payment confirmation email:', emailError);
+      throw emailError;
     }
+  } catch (error) {
+    console.error('Failed to send payment confirmation email:', error);
+    throw error;
+  }
+}
+
+async function updateOrderStatus(orderId: string, status: string, paymentDetails: Partial<EuPagoWebhookPayload>) {
+  console.log(`Updating order ${orderId} with status ${status} and details:`, paymentDetails);
+  
+  try {
+    // First get the order details for the email
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (orderError) {
+      console.error('Error fetching order:', orderError);
+      throw orderError;
+    }
+
+    // Update the order status
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        payment_status: status,
+        payment_id: paymentDetails.transacao,
+        status: status === 'completed' ? 'processing' : 'pending'
+      })
+      .eq('id', orderId);
+
+    if (updateError) {
+      console.error('Error updating order status:', updateError);
+      throw updateError;
+    }
+
+    // If payment is completed, send confirmation email
+    if (status === 'completed') {
+      await sendPaymentConfirmationEmail(orderId, order);
+    }
+  } catch (error) {
+    console.error('Failed to process order update:', error);
+    throw error;
   }
 }
 
 async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
   console.log('Processing EuPago webhook with payload:', payload);
   
-  // Extract order ID from identificador field
   const orderId = payload.identificador;
   if (!orderId) {
     throw new Error('No order identifier (identificador) in EuPago webhook');
   }
 
-  // Verify this is a payment notification (EuPago only sends notifications for successful payments)
   if (!payload.transacao || !payload.valor) {
     throw new Error('Invalid payment notification: missing transaction ID or amount');
   }
@@ -79,7 +117,6 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
     location: payload.local
   });
 
-  // Since EuPago only sends webhooks for successful payments, we can mark this as completed
   await updateOrderStatus(orderId, 'completed', payload);
   
   return { 
@@ -89,23 +126,19 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the raw body as text
     const body = await req.text();
     console.log('Received webhook body:', body);
     
-    // Parse the URL-encoded form data or JSON
     let payload: EuPagoWebhookPayload;
     
     try {
-      // First try to parse as JSON
       payload = JSON.parse(body);
     } catch {
-      // If JSON parsing fails, try to parse as URL-encoded form data
       const params = new URLSearchParams(body);
       payload = Object.fromEntries(params.entries());
     }
@@ -115,7 +148,7 @@ serve(async (req) => {
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Webhook processing error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
