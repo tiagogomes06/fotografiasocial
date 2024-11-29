@@ -21,3 +21,16 @@ export interface Student {
   photoUrl?: string;
   created_at?: string;
 }
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+}
+
+export interface CartItem {
+  photoUrl: string;
+  productId: string;
+  price: number;
+}
