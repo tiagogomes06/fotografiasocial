@@ -21,56 +21,39 @@ const Admin = () => {
 
   // Set up real-time subscriptions
   useEffect(() => {
-    const schoolsChannel = supabase
-      .channel('schools-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'schools'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['schools'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'classes'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['schools'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'students'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['schools'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'photos'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['schools'] });
-        }
-      )
+    const channel = supabase.channel('db-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'schools' 
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'classes' 
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'students' 
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'photos' 
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      })
       .subscribe();
 
     return () => {
-      schoolsChannel.unsubscribe();
+      channel.unsubscribe();
     };
   }, [queryClient]);
 
