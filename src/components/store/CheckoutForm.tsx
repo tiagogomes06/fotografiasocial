@@ -53,6 +53,31 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     method => method.id === shippingMethod
   )?.type === "pickup";
 
+  const ensurePhotosExist = async () => {
+    for (const item of cart) {
+      const { data: existingPhoto } = await supabase
+        .from("photos")
+        .select("id")
+        .eq("id", item.photoId)
+        .single();
+
+      if (!existingPhoto) {
+        // Create the photo if it doesn't exist
+        const { error: createError } = await supabase
+          .from("photos")
+          .insert({
+            id: item.photoId,
+            url: item.photoUrl,
+            student_id: item.studentId
+          });
+
+        if (createError) {
+          throw new Error(`Failed to create photo: ${createError.message}`);
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -71,7 +96,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       return;
     }
 
-    // Check if we have a valid studentId from the cart
     if (!cart[0]?.studentId) {
       toast.error("Erro ao processar o pedido: ID do estudante não encontrado");
       return;
@@ -80,6 +104,9 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     try {
       setIsProcessing(true);
       toast.info("A processar o seu pedido...");
+
+      // Ensure all photos exist in the database
+      await ensurePhotosExist();
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
