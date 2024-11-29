@@ -42,11 +42,46 @@ serve(async (req) => {
     console.log('Order details:', order)
     let paymentResponse
 
-    if (paymentMethod === 'mbway' || paymentMethod === 'multibanco') {
-      // EuPago integration
-      const eupagoMethod = paymentMethod === 'mbway' ? 'mb_way' : 'multibanco'
-      console.log(`Making EuPago request for ${eupagoMethod}`)
+    if (paymentMethod === 'mbway') {
+      console.log('Creating MBWay payment')
+      const response = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'Authorization': `ApiKey ${EUPAGO_API_KEY}`,
+        },
+        body: JSON.stringify({
+          payment: {
+            identifier: orderId,
+            amount: {
+              value: order.total_amount,
+              currency: 'EUR'
+            },
+            successUrl: `${req.headers.get('origin')}/payment-success`,
+            failUrl: `${req.headers.get('origin')}/payment-cancelled`,
+            backUrl: `${req.headers.get('origin')}/cart`,
+            lang: 'PT'
+          },
+          customer: {
+            notify: true,
+            phone: order.shipping_phone,
+            name: order.shipping_name,
+          }
+        })
+      })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('EuPago error:', errorText)
+        throw new Error(`EuPago error: ${errorText}`)
+      }
+
+      paymentResponse = await response.json()
+      console.log('EuPago response:', paymentResponse)
+
+    } else if (paymentMethod === 'multibanco') {
+      console.log('Creating Multibanco payment')
       const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
         method: 'POST',
         headers: {
@@ -54,14 +89,10 @@ serve(async (req) => {
           'Authorization': `ApiKey ${EUPAGO_API_KEY}`,
         },
         body: JSON.stringify({
-          payment_method: eupagoMethod,
+          payment_method: 'multibanco',
           valor: order.total_amount,
           chave: EUPAGO_API_KEY,
           id: orderId,
-          ...(paymentMethod === 'mbway' ? { 
-            alias: order.shipping_phone,
-            cliente: order.shipping_name
-          } : {})
         }),
       })
 
