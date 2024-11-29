@@ -65,73 +65,90 @@ export const createEupagoMBWayPayment = async (
   origin: string,
   apiKey: string
 ): Promise<PaymentResponse> => {
-  console.log('Creating EuPago MBWay payment');
-  
-  const response = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
-    method: 'POST',
-    headers: {
-      'accept': 'application/json',
-      'content-type': 'application/json',
-      'Authorization': `ApiKey ${apiKey}`,
-    },
-    body: JSON.stringify({
-      payment: {
-        identifier: order.id,
-        amount: {
-          value: order.total_amount,
-          currency: 'EUR'
-        },
-        successUrl: `${origin}/payment-success`,
-        failUrl: `${origin}/payment-cancelled`,
-        backUrl: `${origin}/cart`,
-        lang: 'PT'
+  console.log('Creating EuPago MBWay payment for order:', order.id);
+
+  const payload = {
+    payment: {
+      amount: {
+        currency: 'EUR',
+        value: order.total_amount
       },
-      customer: {
-        notify: true,
-        phone: order.shipping_phone,
-        name: order.shipping_name,
-      }
-    })
-  });
+      identifier: order.id,
+      successUrl: `${origin}/payment-success`,
+      failUrl: `${origin}/payment-cancelled`,
+      backUrl: `${origin}/cart`,
+      lang: 'PT',
+      customerPhone: order.shipping_phone,
+      countryCode: '+351'
+    },
+    customer: {
+      notify: true,
+      email: order.email,
+      name: order.shipping_name
+    }
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('EuPago MBWay error:', errorText);
-    throw new Error(`EuPago error: ${errorText}`);
+  try {
+    const response = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `ApiKey ${apiKey}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('EuPago MBWay error response:', errorText);
+      throw new Error(`EuPago error: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('EuPago MBWay success response:', result);
+    return result;
+  } catch (error) {
+    console.error('Error processing EuPago MBWay payment:', error);
+    throw error;
   }
-
-  const result = await response.json();
-  console.log('EuPago MBWay response:', result);
-  return result;
 };
 
 export const createEupagoMultibancoPayment = async (
-  order: any,
+  order: any, 
   apiKey: string
 ): Promise<PaymentResponse> => {
-  console.log('Creating EuPago Multibanco payment');
-  
-  const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `ApiKey ${apiKey}`,
-    },
-    body: JSON.stringify({
-      payment_method: 'multibanco',
-      valor: order.total_amount,
-      chave: apiKey,
-      id: order.id,
-    }),
-  });
+  console.log('Creating EuPago Multibanco payment for order:', order.id);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('EuPago Multibanco error:', errorText);
-    throw new Error(`EuPago error: ${errorText}`);
+  const payload = {
+    payment_method: 'multibanco',
+    valor: order.total_amount,
+    chave: apiKey,
+    id: order.id
+  };
+
+  try {
+    const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
+      method: 'POST',
+      headers: {
+        'Authorization': `ApiKey ${apiKey}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('EuPago Multibanco error response:', errorText);
+      throw new Error(`EuPago error: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('EuPago Multibanco success response:', result);
+    return result;
+  } catch (error) {
+    console.error('Error processing EuPago Multibanco payment:', error);
+    throw error;
   }
-
-  const result = await response.json();
-  console.log('EuPago Multibanco response:', result);
-  return result;
 };
