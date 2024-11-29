@@ -9,7 +9,8 @@ import { loadStripe } from "@stripe/stripe-js";
 import ShippingForm from "./ShippingForm";
 import PaymentMethodSelect from "./PaymentMethodSelect";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Make sure the environment variable is properly accessed
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
 
 interface CheckoutFormProps {
   cart: CartItem[];
