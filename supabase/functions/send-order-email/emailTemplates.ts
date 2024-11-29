@@ -34,16 +34,12 @@ const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAd
     isAdmin ? 'Foi recebido um novo pagamento.' : 'O pagamento da sua encomenda foi confirmado.';
 
   const shippingInfo = order.shipping_address ? 
-    `<tr>
-      <td style="padding: 10px; border-bottom: 1px solid #eee;">
-        <div style="font-family: sans-serif;">
-          <strong class="text-gray-700">Morada de Envio:</strong><br>
-          ${order.shipping_name}<br>
-          ${order.shipping_address}<br>
-          ${order.shipping_postal_code} ${order.shipping_city}
-        </div>
-      </td>
-    </tr>` : '';
+    `<div class="mb-4 p-4 bg-gray-50 rounded-lg">
+      <p class="font-semibold mb-2">Morada de Envio:</p>
+      <p>${order.shipping_name}</p>
+      <p>${order.shipping_address}</p>
+      <p>${order.shipping_postal_code} ${order.shipping_city}</p>
+    </div>` : '';
 
   return `
     <!DOCTYPE html>
@@ -52,80 +48,56 @@ const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAd
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${title}</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-      </style>
     </head>
-    <body style="font-family: 'Inter', sans-serif; line-height: 1.5; color: #374151; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-      <div style="background-color: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+    <body style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+      <div style="background-color: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
         <h1 style="color: #111827; margin-bottom: 16px; text-align: center; font-size: 24px; font-weight: 600;">${title}</h1>
-        <p style="text-align: center; color: #6B7280; margin-bottom: 24px;">${message}</p>
+        <p style="text-align: center; color: #4b5563; margin-bottom: 24px;">${message}</p>
       </div>
 
-      <div style="background-color: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-              <div style="font-family: sans-serif;">
-                <strong class="text-gray-700">Número da Encomenda:</strong> ${order.id}
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-              <div style="font-family: sans-serif;">
-                <strong class="text-gray-700">Cliente:</strong> ${order.shipping_name}<br>
-                <strong class="text-gray-700">Email:</strong> ${order.email}<br>
-                <strong class="text-gray-700">Telefone:</strong> ${order.shipping_phone}
-              </div>
-            </td>
-          </tr>
-          ${shippingInfo}
-          <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-              <div style="font-family: sans-serif;">
-                <strong class="text-gray-700">Método de Pagamento:</strong> ${order.payment_method}<br>
-                <strong class="text-gray-700">Método de Envio:</strong> ${order.shipping_methods?.name || 'N/A'} 
-                (${order.shipping_methods?.price ? order.shipping_methods.price + '€' : 'Grátis'})
-              </div>
-            </td>
-          </tr>
-        </table>
+      <div style="background-color: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Número da Encomenda:</span> ${order.id}</p>
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Cliente:</span> ${order.shipping_name}</p>
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Email:</span> ${order.email}</p>
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Telefone:</span> ${order.shipping_phone}</p>
+        </div>
+
+        ${shippingInfo}
+
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Método de Pagamento:</span> ${order.payment_method}</p>
+          <p style="margin: 8px 0;"><span style="font-weight: 600; color: #374151;">Método de Envio:</span> ${order.shipping_methods?.name} 
+            ${order.shipping_methods?.price ? `(${order.shipping_methods.price}€)` : '(Grátis)'}</p>
+        </div>
       </div>
 
-      <div style="background-color: white; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
-        <h2 style="color: #111827; margin-bottom: 16px; font-size: 18px; font-weight: 600;">Itens da Encomenda</h2>
-        <table style="width: 100%; border-collapse: collapse;">
-          ${order.order_items.map(item => `
-            <tr>
-              <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-                <div style="display: flex; align-items: center;">
-                  <div style="flex: 1; font-family: sans-serif;">
-                    <strong class="text-gray-700">${item.products.name}</strong><br>
-                    <span class="text-gray-600">Quantidade: ${item.quantity}</span><br>
-                    <span class="text-gray-600">Preço: ${item.price_at_time}€</span><br>
-                    <a href="${item.photos.url}" 
-                       style="color: #6366f1; text-decoration: none; display: inline-block; margin-top: 8px; font-weight: 500;">
-                      Ver Foto
-                    </a>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-          <tr>
-            <td style="padding: 12px; text-align: right;">
-              <div style="font-family: sans-serif;">
-                <strong class="text-gray-700">Total:</strong> 
-                <span style="color: #111827; font-weight: 600;">${order.total_amount}€</span>
-              </div>
-            </td>
-          </tr>
-        </table>
+      <div style="background-color: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #111827; margin-bottom: 16px; font-size: 20px; font-weight: 600;">Itens da Encomenda</h2>
+        
+        ${order.order_items.map(item => `
+          <div style="padding: 16px; border-bottom: 1px solid #e5e7eb;">
+            <div style="margin-bottom: 8px;">
+              <p style="margin: 4px 0; font-weight: 600; color: #374151;">${item.products.name}</p>
+              <p style="margin: 4px 0; color: #6b7280;">Quantidade: ${item.quantity}</p>
+              <p style="margin: 4px 0; color: #6b7280;">Preço: ${item.price_at_time}€</p>
+              <a href="${item.photos.url}" 
+                 style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 8px; font-weight: 500;">
+                Ver Foto
+              </a>
+            </div>
+          </div>
+        `).join('')}
+
+        <div style="margin-top: 16px; text-align: right;">
+          <p style="margin: 0; font-weight: 600; color: #111827;">
+            Total: ${order.total_amount}€
+          </p>
+        </div>
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
-        <p style="color: #6B7280; font-size: 14px;">Obrigado pela sua preferência!</p>
+        <p style="color: #6b7280;">Obrigado pela sua preferência!</p>
       </div>
     </body>
     </html>
