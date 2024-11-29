@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Download, ShoppingBag } from "lucide-react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
 import { downloadSinglePhoto, downloadAllPhotos } from "@/utils/downloadUtils";
 import { useNavigate } from "react-router-dom";
 
@@ -42,33 +41,27 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
         </div>
       </div>
 
-      <Carousel className="w-full max-w-3xl mx-auto">
-        <CarouselContent>
-          {photos.map((photo, index) => (
-            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-              <div className="relative group">
-                <img
-                  src={photo}
-                  alt={`Photo ${index + 1}`}
-                  className="w-full aspect-square object-cover rounded-lg"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleSingleDownload(photo, index)}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {photos.map((photo, index) => (
+          <div key={index} className="relative group aspect-square">
+            <img
+              src={photo}
+              alt={`Photo ${index + 1}`}
+              className="w-full h-full object-cover rounded-lg"
+            />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleSingleDownload(photo, index)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
