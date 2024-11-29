@@ -11,7 +11,7 @@ import { CartItem, Product } from "@/types/admin";
 const Store = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { photos = [] } = location.state || {};
+  const { photos = [], studentName, studentId: initialStudentId } = location.state || {};
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [productSelections, setProductSelections] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -65,19 +65,38 @@ const Store = () => {
     return matches ? matches[1] : null;
   };
 
-  const verifyPhotoExists = async (photoId: string) => {
-    const { data, error } = await supabase
+  const getOrCreatePhoto = async (photoUrl: string, studentId: string) => {
+    const photoId = extractPhotoId(photoUrl);
+    if (!photoId) return null;
+
+    // First try to find the photo
+    const { data: existingPhoto } = await supabase
       .from("photos")
       .select("id")
       .eq("id", photoId)
       .single();
-    
-    if (error) {
-      console.error("Error verifying photo:", error);
-      return false;
+
+    if (existingPhoto) {
+      return photoId;
     }
-    
-    return !!data;
+
+    // If photo doesn't exist, create it
+    const { data: newPhoto, error: createError } = await supabase
+      .from("photos")
+      .insert({
+        id: photoId,
+        url: photoUrl,
+        student_id: studentId
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error("Error creating photo:", createError);
+      return null;
+    }
+
+    return newPhoto.id;
   };
 
   const addToCart = async () => {
@@ -92,16 +111,10 @@ const Store = () => {
     
     for (const photo of selectedPhotos.filter(photo => productSelections[photo])) {
       const product = products.find(p => p.id === productSelections[photo]);
-      const photoId = extractPhotoId(photo);
+      const photoId = await getOrCreatePhoto(photo, studentId);
       
       if (!photoId) {
         toast.error(`Erro ao processar foto: ${photo}`);
-        continue;
-      }
-
-      const photoExists = await verifyPhotoExists(photoId);
-      if (!photoExists) {
-        toast.error(`Foto não encontrada no banco de dados: ${photo}`);
         continue;
       }
 
