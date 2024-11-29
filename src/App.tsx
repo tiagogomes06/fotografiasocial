@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import PhotoAccess from "./pages/PhotoAccess";
 import Admin from "./pages/Admin";
+import Store from "./pages/Store";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/access" element={<PhotoAccess />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/store" element={<Store />} />
           </Routes>
         </AnimatePresence>
       </BrowserRouter>
