@@ -41,18 +41,13 @@ const PhotoCard = ({
         </div>
         
         {isSelected && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <h4 className="text-sm font-medium mb-2">Choose a product:</h4>
             <Select
               value={selectedProduct}
               onValueChange={onProductSelect}
             >
-              <SelectTrigger 
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a product" />
               </SelectTrigger>
               <SelectContent>
