@@ -19,6 +19,7 @@ const Admin = () => {
     queryFn: fetchSchools,
   });
 
+  // Subscribe to all relevant tables for real-time updates
   useEffect(() => {
     const channel = supabase.channel('schema-db-changes')
       .on('postgres_changes', { 
@@ -56,25 +57,23 @@ const Admin = () => {
     };
   }, [queryClient]);
 
-  // Update selectedSchool when schools data changes
+  // Update selected entities when data changes
   useEffect(() => {
     if (selectedSchool) {
       const updatedSchool = schools.find(school => school.id === selectedSchool.id);
       if (updatedSchool) {
         setSelectedSchool(updatedSchool);
+        
+        // If we have a selected class, update it with the new data
+        if (selectedClass) {
+          const updatedClass = updatedSchool.classes.find(cls => cls.id === selectedClass.id);
+          if (updatedClass) {
+            setSelectedClass(updatedClass);
+          }
+        }
       }
     }
-  }, [schools, selectedSchool]);
-
-  // Update selectedClass when selectedSchool changes
-  useEffect(() => {
-    if (selectedClass && selectedSchool) {
-      const updatedClass = selectedSchool.classes.find(cls => cls.id === selectedClass.id);
-      if (updatedClass) {
-        setSelectedClass(updatedClass);
-      }
-    }
-  }, [selectedSchool, selectedClass]);
+  }, [schools, selectedSchool?.id, selectedClass?.id]);
 
   const schoolMutation = useMutation({
     mutationFn: (values: { schoolName: string }) => createSchool(values.schoolName),
@@ -124,7 +123,7 @@ const Admin = () => {
   };
 
   const handlePhotoUploaded = async () => {
-    queryClient.invalidateQueries({ queryKey: ['schools'] });
+    await queryClient.invalidateQueries({ queryKey: ['schools'] });
   };
 
   if (isLoading) {

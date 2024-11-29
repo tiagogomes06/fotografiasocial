@@ -36,7 +36,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
         }
 
         const photo = await uploadPhoto(file, studentId);
-        onPhotoUploaded(photo.url);
+        await onPhotoUploaded(photo.url);
         completedFiles++;
         setUploadProgress((completedFiles / totalFiles) * 100);
         toast.success(`Photo ${file.name} uploaded successfully`);
