@@ -10,16 +10,27 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-async function updateOrderStatus(orderId: string, status: string, transactionId?: string) {
-  console.log(`Updating order ${orderId} status to ${status}, transaction: ${transactionId}`);
+interface EuPagoWebhookPayload {
+  valor?: string;           // Payment amount
+  canal?: string;          // Channel name
+  referencia?: string;     // Reference number
+  transacao?: string;      // Transaction ID
+  identificador?: string;  // Order ID in our system
+  mp?: string;            // Payment Method Code
+  chave_api?: string;     // API Key used
+  data?: string;          // Payment date (YYYY-MM-DD:hh:mm)
+  entidade?: string;      // Entity
+  comissao?: string;      // Payment Fee
+  local?: string;         // Payment City
+}
+
+async function updateOrderStatus(orderId: string, status: string, paymentDetails: Partial<EuPagoWebhookPayload>) {
+  console.log(`Updating order ${orderId} with status ${status} and details:`, paymentDetails);
   
   const updateData: any = { 
-    payment_status: status 
+    payment_status: status,
+    payment_id: paymentDetails.transacao
   };
-  
-  if (transactionId) {
-    updateData.payment_id = transactionId;
-  }
 
   const { error } = await supabase
     .from('orders')
@@ -46,43 +57,35 @@ async function updateOrderStatus(orderId: string, status: string, transactionId?
   }
 }
 
-async function handleEuPagoWebhook(payload: any) {
-  console.log('Processing EuPago webhook:', payload);
+async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
+  console.log('Processing EuPago webhook with payload:', payload);
   
-  // Extract relevant information from the webhook payload
-  const identifier = payload.identificador || payload.referencia;
-  const transactionId = payload.transacao;
-  const status = payload.estado?.toLowerCase();
-
-  if (!identifier) {
-    throw new Error('No order identifier in EuPago webhook');
+  // Extract order ID from identificador field
+  const orderId = payload.identificador;
+  if (!orderId) {
+    throw new Error('No order identifier (identificador) in EuPago webhook');
   }
 
-  console.log(`Processing payment for order ${identifier}, transaction ${transactionId}, status ${status}`);
-
-  let paymentStatus;
-  switch (status) {
-    case 'pago':
-    case 'paid':
-    case 'completed':
-      paymentStatus = 'completed';
-      break;
-    case 'pending':
-    case 'pendente':
-      paymentStatus = 'pending';
-      break;
-    case 'failed':
-    case 'falhou':
-    case 'erro':
-      paymentStatus = 'failed';
-      break;
-    default:
-      console.warn(`Unknown payment status: ${status}`);
-      paymentStatus = 'pending';
+  // Verify this is a payment notification (EuPago only sends notifications for successful payments)
+  if (!payload.transacao || !payload.valor) {
+    throw new Error('Invalid payment notification: missing transaction ID or amount');
   }
 
-  await updateOrderStatus(identifier, paymentStatus, transactionId);
-  return { ok: true };
+  console.log(`Processing successful payment for order ${orderId}:`, {
+    transactionId: payload.transacao,
+    amount: payload.valor,
+    method: payload.mp,
+    date: payload.data,
+    location: payload.local
+  });
+
+  // Since EuPago only sends webhooks for successful payments, we can mark this as completed
+  await updateOrderStatus(orderId, 'completed', payload);
+  
+  return { 
+    success: true,
+    message: `Payment processed successfully for order ${orderId}`
+  };
 }
 
 serve(async (req) => {
@@ -91,17 +94,29 @@ serve(async (req) => {
   }
 
   try {
+    // Get the raw body as text
     const body = await req.text();
     console.log('Received webhook body:', body);
     
-    const payload = JSON.parse(body);
+    // Parse the URL-encoded form data or JSON
+    let payload: EuPagoWebhookPayload;
+    
+    try {
+      // First try to parse as JSON
+      payload = JSON.parse(body);
+    } catch {
+      // If JSON parsing fails, try to parse as URL-encoded form data
+      const params = new URLSearchParams(body);
+      payload = Object.fromEntries(params.entries());
+    }
+
     const result = await handleEuPagoWebhook(payload);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Webhook processing error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
