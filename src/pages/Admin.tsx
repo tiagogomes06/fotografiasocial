@@ -19,40 +19,35 @@ const Admin = () => {
     queryFn: fetchSchools,
   });
 
-  // Set up real-time subscriptions with immediate updates
   useEffect(() => {
     const channel = supabase.channel('schema-db-changes')
       .on('postgres_changes', { 
         event: '*', 
-        schema: 'public', 
-        table: 'schools' 
-      }, async () => {
-        const updatedData = await fetchSchools();
-        queryClient.setQueryData(['schools'], updatedData);
+        schema: 'public',
+        table: 'schools'
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
       })
       .on('postgres_changes', { 
         event: '*', 
-        schema: 'public', 
-        table: 'classes' 
-      }, async () => {
-        const updatedData = await fetchSchools();
-        queryClient.setQueryData(['schools'], updatedData);
+        schema: 'public',
+        table: 'classes'
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
       })
       .on('postgres_changes', { 
         event: '*', 
-        schema: 'public', 
-        table: 'students' 
-      }, async () => {
-        const updatedData = await fetchSchools();
-        queryClient.setQueryData(['schools'], updatedData);
+        schema: 'public',
+        table: 'students'
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
       })
       .on('postgres_changes', { 
         event: '*', 
-        schema: 'public', 
-        table: 'photos' 
-      }, async () => {
-        const updatedData = await fetchSchools();
-        queryClient.setQueryData(['schools'], updatedData);
+        schema: 'public',
+        table: 'photos'
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['schools'] });
       })
       .subscribe();
 
@@ -61,12 +56,31 @@ const Admin = () => {
     };
   }, [queryClient]);
 
+  // Update selectedSchool when schools data changes
+  useEffect(() => {
+    if (selectedSchool) {
+      const updatedSchool = schools.find(school => school.id === selectedSchool.id);
+      if (updatedSchool) {
+        setSelectedSchool(updatedSchool);
+      }
+    }
+  }, [schools, selectedSchool]);
+
+  // Update selectedClass when selectedSchool changes
+  useEffect(() => {
+    if (selectedClass && selectedSchool) {
+      const updatedClass = selectedSchool.classes.find(cls => cls.id === selectedClass.id);
+      if (updatedClass) {
+        setSelectedClass(updatedClass);
+      }
+    }
+  }, [selectedSchool, selectedClass]);
+
   const schoolMutation = useMutation({
     mutationFn: (values: { schoolName: string }) => createSchool(values.schoolName),
-    onSuccess: async () => {
+    onSuccess: () => {
       toast.success("School added successfully");
-      const updatedData = await fetchSchools();
-      queryClient.setQueryData(['schools'], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
     },
     onError: (error) => {
       toast.error("Failed to add school");
@@ -79,10 +93,9 @@ const Admin = () => {
       if (!selectedSchool) throw new Error("No school selected");
       return createClass(values.className, selectedSchool.id);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       toast.success("Class added successfully");
-      const updatedData = await fetchSchools();
-      queryClient.setQueryData(['schools'], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
     },
     onError: (error) => {
       toast.error("Failed to add class");
@@ -96,10 +109,9 @@ const Admin = () => {
       const accessCode = generateAccessCode();
       return createStudent(values.studentName, selectedClass.id, accessCode);
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       toast.success("Student added successfully");
-      const updatedData = await fetchSchools();
-      queryClient.setQueryData(['schools'], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
     },
     onError: (error) => {
       toast.error("Failed to add student");
@@ -111,9 +123,8 @@ const Admin = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
-  const handlePhotoUploaded = async (studentId: string, photoUrl: string) => {
-    const updatedData = await fetchSchools();
-    queryClient.setQueryData(['schools'], updatedData);
+  const handlePhotoUploaded = async () => {
+    queryClient.invalidateQueries({ queryKey: ['schools'] });
   };
 
   if (isLoading) {
@@ -155,6 +166,7 @@ const Admin = () => {
           />
         )}
       </main>
+      <Toaster />
     </div>
   );
 };
