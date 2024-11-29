@@ -62,7 +62,8 @@ export const uploadPhoto = async (file: File, studentId: string) => {
 };
 
 export const fetchSchools = async (): Promise<School[]> => {
-  const { data, error } = await supabase
+  // First, fetch schools with their classes and students
+  const { data: schoolsData, error: schoolsError } = await supabase
     .from('schools')
     .select(`
       *,
@@ -72,10 +73,26 @@ export const fetchSchools = async (): Promise<School[]> => {
       )
     `);
   
-  if (error) throw error;
-  
+  if (schoolsError) throw schoolsError;
+
+  // Then, fetch all photos
+  const { data: photosData, error: photosError } = await supabase
+    .from('photos')
+    .select('*');
+
+  if (photosError) throw photosError;
+
+  // Create a map of student IDs to their photos
+  const studentPhotos = new Map();
+  photosData?.forEach(photo => {
+    if (!studentPhotos.has(photo.student_id)) {
+      studentPhotos.set(photo.student_id, []);
+    }
+    studentPhotos.get(photo.student_id).push(photo.url);
+  });
+
   // Transform the data to match our types
-  const schools = data.map((school): School => ({
+  const schools = schoolsData.map((school): School => ({
     id: school.id,
     name: school.name,
     created_at: school.created_at,
@@ -89,7 +106,8 @@ export const fetchSchools = async (): Promise<School[]> => {
         name: student.name,
         access_code: student.access_code,
         class_id: student.class_id,
-        created_at: student.created_at
+        created_at: student.created_at,
+        photoUrl: studentPhotos.get(student.id)?.[0] // Get the first photo URL if it exists
       }))
     }))
   }));
