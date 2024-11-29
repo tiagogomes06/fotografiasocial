@@ -12,24 +12,26 @@ import Cart from "./pages/Cart";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/access" element={<PhotoAccess />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/store" element={<Store />} />
-            <Route path="/cart" element={<Cart />} />
-          </Routes>
-        </AnimatePresence>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/access" element={<PhotoAccess />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/store" element={<Store />} />
+              <Route path="/cart" element={<Cart />} />
+            </Routes>
+          </AnimatePresence>
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
