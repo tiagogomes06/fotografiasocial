@@ -47,7 +47,7 @@ serve(async (req) => {
       const eupagoMethod = paymentMethod === 'mbway' ? 'mb_way' : 'multibanco'
       console.log(`Making EuPago request for ${eupagoMethod}`)
 
-      const response = await fetch('https://sandbox.eupago.pt/clientes/rest_api/pagamento/create', {
+      const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
