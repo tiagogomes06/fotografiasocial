@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/select";
 import { CartItem } from "@/types/admin";
 import { toast } from "sonner";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 interface CheckoutFormProps {
   cart: CartItem[];
@@ -31,6 +34,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     city: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { data: shippingMethods = [] } = useQuery({
     queryKey: ["shippingMethods"],
@@ -62,9 +66,71 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       return;
     }
 
-    toast.success("Pedido criado com sucesso!");
-    // TODO: Implement order creation and payment processing
-    navigate("/");
+    try {
+      setIsProcessing(true);
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          student_id: cart[0]?.studentId,
+          total_amount: cart.reduce((sum, item) => sum + item.price, 0),
+          shipping_method_id: shippingMethod,
+          shipping_address: formData.address,
+          shipping_city: formData.city,
+          shipping_postal_code: formData.postalCode,
+          shipping_name: formData.name,
+          shipping_phone: formData.phone,
+          payment_method: paymentMethod,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        photo_id: item.photoId,
+        product_id: item.productId,
+        price_at_time: item.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Process payment
+      const { data: payment } = await supabase.functions.invoke("create-payment", {
+        body: { orderId: order.id, paymentMethod },
+      });
+
+      if (paymentMethod === "card") {
+        // Redirect to Stripe Checkout
+        window.location.href = payment.url;
+      } else {
+        // Show payment details for EuPago methods
+        toast.success("Pedido criado com sucesso!");
+        if (paymentMethod === "mbway") {
+          toast.info("Por favor, confirme o pagamento na sua app MB WAY");
+        } else if (paymentMethod === "multibanco") {
+          toast.info(`
+            Referência Multibanco:
+            Entidade: ${payment.entity}
+            Referência: ${payment.reference}
+            Valor: ${payment.amount}€
+          `);
+        }
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error processing order:", error);
+      toast.error("Erro ao processar o pedido. Por favor tente novamente.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -157,11 +223,16 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       </div>
 
       <div className="flex gap-4">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onBack}
+          disabled={isProcessing}
+        >
           Voltar ao Carrinho
         </Button>
-        <Button type="submit">
-          Finalizar Compra
+        <Button type="submit" disabled={isProcessing}>
+          {isProcessing ? "A processar..." : "Finalizar Compra"}
         </Button>
       </div>
     </form>
