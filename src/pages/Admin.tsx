@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { Toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,36 +19,44 @@ const Admin = () => {
     queryFn: fetchSchools,
   });
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions with immediate updates
   useEffect(() => {
     const channel = supabase.channel('schema-db-changes')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'schools' 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      }, async () => {
+        await queryClient.invalidateQueries({ queryKey: ['schools'] });
+        const updatedData = await fetchSchools();
+        queryClient.setQueryData(['schools'], updatedData);
       })
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'classes' 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      }, async () => {
+        await queryClient.invalidateQueries({ queryKey: ['schools'] });
+        const updatedData = await fetchSchools();
+        queryClient.setQueryData(['schools'], updatedData);
       })
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'students' 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      }, async () => {
+        await queryClient.invalidateQueries({ queryKey: ['schools'] });
+        const updatedData = await fetchSchools();
+        queryClient.setQueryData(['schools'], updatedData);
       })
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'photos' 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['schools'] });
+      }, async () => {
+        await queryClient.invalidateQueries({ queryKey: ['schools'] });
+        const updatedData = await fetchSchools();
+        queryClient.setQueryData(['schools'], updatedData);
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
