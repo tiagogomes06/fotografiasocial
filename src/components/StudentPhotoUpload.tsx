@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
+import { uploadPhoto } from "@/utils/supabaseHelpers";
 
 interface StudentPhotoUploadProps {
   studentId: string;
@@ -27,17 +28,13 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
           continue;
         }
 
-        // Convert the file to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          onPhotoUploaded(base64String);
-          toast.success(`Photo ${file.name} uploaded successfully`);
-        };
-        reader.readAsDataURL(file);
+        const photo = await uploadPhoto(file, studentId);
+        onPhotoUploaded(photo.url);
+        toast.success(`Photo ${file.name} uploaded successfully`);
       }
     } catch (error) {
       toast.error('Failed to upload photos');
+      console.error(error);
     } finally {
       setIsUploading(false);
     }

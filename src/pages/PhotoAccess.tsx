@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { QrCode, Key } from "lucide-react";
 import { toast } from "sonner";
 import PhotoGallery from "@/components/PhotoGallery";
+import { supabase } from "@/integrations/supabase/client";
 
 const PhotoAccess = () => {
   const [accessCode, setAccessCode] = useState("");
@@ -10,21 +11,40 @@ const PhotoAccess = () => {
   const [studentName, setStudentName] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mock verification - replace with actual API call
-    if (accessCode) {
-      // Simulating photos fetch - replace with actual data
-      setPhotos([
-        "data:image/jpeg;base64,/9j...", // Replace with actual base64 images
-        "data:image/jpeg;base64,/9j...",
-      ]);
-      setStudentName("John Doe"); // Replace with actual student name
+    try {
+      // Find student by access code
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('id, name')
+        .eq('access_code', accessCode)
+        .single();
+
+      if (studentError || !student) {
+        toast.error("Invalid access code");
+        return;
+      }
+
+      // Get student's photos
+      const { data: photoData, error: photosError } = await supabase
+        .from('photos')
+        .select('url')
+        .eq('student_id', student.id);
+
+      if (photosError) {
+        toast.error("Failed to fetch photos");
+        return;
+      }
+
+      setPhotos(photoData.map(p => p.url));
+      setStudentName(student.name);
       setIsAuthenticated(true);
       toast.success("Access granted!");
-    } else {
-      toast.error("Invalid access code");
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error(error);
     }
   };
 

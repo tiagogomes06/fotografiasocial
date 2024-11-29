@@ -8,14 +8,21 @@ import { useForm } from "react-hook-form";
 import { Plus, Users, School as SchoolIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import StudentActions from "@/components/StudentActions";
 import { School, Class, Student } from "@/types/admin";
+import { createSchool, createClass, createStudent, fetchSchools } from "@/utils/supabaseHelpers";
 
 const Admin = () => {
-  const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const queryClient = useQueryClient();
   
+  const { data: schools = [], isLoading } = useQuery({
+    queryKey: ['schools'],
+    queryFn: fetchSchools,
+  });
+
   const schoolForm = useForm({
     defaultValues: {
       schoolName: "",
@@ -38,107 +45,71 @@ const Admin = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
+  const schoolMutation = useMutation({
+    mutationFn: (values: { schoolName: string }) => createSchool(values.schoolName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+      schoolForm.reset();
+      toast.success("School added successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to add school");
+      console.error(error);
+    },
+  });
+
+  const classMutation = useMutation({
+    mutationFn: (values: { className: string }) => {
+      if (!selectedSchool) throw new Error("No school selected");
+      return createClass(values.className, selectedSchool.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+      classForm.reset();
+      toast.success("Class added successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to add class");
+      console.error(error);
+    },
+  });
+
+  const studentMutation = useMutation({
+    mutationFn: (values: { studentName: string }) => {
+      if (!selectedClass) throw new Error("No class selected");
+      const accessCode = generateAccessCode();
+      return createStudent(values.studentName, selectedClass.id, accessCode);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+      studentForm.reset();
+      toast.success("Student added successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to add student");
+      console.error(error);
+    },
+  });
+
   const onSubmitSchool = (values: { schoolName: string }) => {
-    const newSchool: School = {
-      id: crypto.randomUUID(),
-      name: values.schoolName,
-      classes: [],
-    };
-    setSchools([...schools, newSchool]);
-    schoolForm.reset();
-    toast.success("School added successfully");
+    schoolMutation.mutate(values);
   };
 
   const onSubmitClass = (values: { className: string }) => {
-    if (!selectedSchool) return;
-    
-    const newClass: Class = {
-      id: crypto.randomUUID(),
-      name: values.className,
-      schoolId: selectedSchool.id,
-      students: [],
-    };
-    
-    const updatedSchools = schools.map(school => {
-      if (school.id === selectedSchool.id) {
-        return {
-          ...school,
-          classes: [...school.classes, newClass],
-        };
-      }
-      return school;
-    });
-    
-    setSchools(updatedSchools);
-    classForm.reset();
-    toast.success("Class added successfully");
+    classMutation.mutate(values);
   };
 
   const onSubmitStudent = (values: { studentName: string }) => {
-    if (!selectedClass) return;
-    
-    const newStudent: Student = {
-      id: crypto.randomUUID(),
-      name: values.studentName,
-      accessCode: generateAccessCode(),
-      classId: selectedClass.id,
-    };
-    
-    const updatedSchools = schools.map(school => {
-      if (school.id === selectedSchool?.id) {
-        const updatedClasses = school.classes.map(cls => {
-          if (cls.id === selectedClass.id) {
-            return {
-              ...cls,
-              students: [...cls.students, newStudent],
-            };
-          }
-          return cls;
-        });
-        return {
-          ...school,
-          classes: updatedClasses,
-        };
-      }
-      return school;
-    });
-    
-    setSchools(updatedSchools);
-    studentForm.reset();
-    toast.success("Student added successfully");
+    studentMutation.mutate(values);
   };
 
-  const handlePhotoUploaded = (studentId: string, photoUrl: string) => {
-    const updatedSchools = schools.map(school => {
-      if (school.id === selectedSchool?.id) {
-        const updatedClasses = school.classes.map(cls => {
-          if (cls.id === selectedClass?.id) {
-            const updatedStudents = cls.students.map(student => {
-              if (student.id === studentId) {
-                return {
-                  ...student,
-                  photoUrl,
-                };
-              }
-              return student;
-            });
-            return {
-              ...cls,
-              students: updatedStudents,
-            };
-          }
-          return cls;
-        });
-        return {
-          ...school,
-          classes: updatedClasses,
-        };
-      }
-      return school;
-    });
-    
-    setSchools(updatedSchools);
+  const handlePhotoUploaded = async (studentId: string, photoUrl: string) => {
+    queryClient.invalidateQueries({ queryKey: ['schools'] });
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
