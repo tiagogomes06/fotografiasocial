@@ -24,8 +24,8 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
     },
   });
 
-  const handleSubmit = (values: { studentName: string }) => {
-    onAddStudent(values);
+  const handleSubmit = async (values: { studentName: string }) => {
+    await onAddStudent(values);
     setIsOpen(false);
     studentForm.reset();
   };

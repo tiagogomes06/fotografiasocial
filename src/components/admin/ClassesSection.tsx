@@ -23,8 +23,8 @@ export const ClassesSection = ({ school, onAddClass, onSelectClass, onBack }: Cl
     },
   });
 
-  const handleSubmit = (values: { className: string }) => {
-    onAddClass(values);
+  const handleSubmit = async (values: { className: string }) => {
+    await onAddClass(values);
     setIsOpen(false);
     classForm.reset();
   };
