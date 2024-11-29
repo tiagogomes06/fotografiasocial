@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Download, ShoppingBag } from "lucide-react";
+import { Download, ShoppingBag, X } from "lucide-react";
 import { downloadSinglePhoto, downloadAllPhotos } from "@/utils/downloadUtils";
 import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -43,23 +48,47 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {photos.map((photo, index) => (
-          <div key={index} className="relative group aspect-square">
-            <img
-              src={photo}
-              alt={`Photo ${index + 1}`}
-              className="w-full h-full object-cover rounded-lg"
-            />
-            <div className="absolute inset-0 bg-black/60 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleSingleDownload(photo, index)}
-                className="w-36"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </Button>
-            </div>
+          <div key={index} className="relative group space-y-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="cursor-pointer aspect-square">
+                  <img
+                    src={photo}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
+                  />
+                </div>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] h-auto max-h-[90vh] p-0">
+                <div className="relative group">
+                  <img
+                    src={photo}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
+                      if (closeButton) closeButton.click();
+                    }}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleSingleDownload(photo, index)}
+              className="w-full"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
           </div>
         ))}
       </div>
