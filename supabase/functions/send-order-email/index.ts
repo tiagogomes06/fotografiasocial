@@ -1,47 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = 'envio@fotografiaescolar.duploefeito.com'
-const ADMIN_EMAIL = 'eu@tiagogomes.pt'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-async function sendEmail(to: string[], subject: string, html: string) {
-  console.log(`Attempting to send email to: ${to.join(', ')}`)
-  
-  const client = new SMTPClient({
-    connection: {
-      hostname: "fotografiaescolar.duploefeito.com",
-      port: 465,
-      tls: true,
-      auth: {
-        username: "envio@fotografiaescolar.duploefeito.com",
-        password: "Imacdejose1506!",
-      },
-    },
-  });
-
-  try {
-    for (const recipient of to) {
-      const send = await client.send({
-        from: FROM_EMAIL,
-        to: recipient,
-        subject: subject,
-        html: html,
-      });
-      console.log(`Successfully sent email to ${recipient}:`, send)
-    }
-  } finally {
-    await client.close();
-  }
+interface EmailRequest {
+  orderId: string;
+  type: 'created' | 'paid';
+  html?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -50,140 +21,71 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { orderId, type } = await req.json()
-    console.log(`Processing order email for order ${orderId}, type: ${type}`)
+    const { orderId, type, html } = await req.json() as EmailRequest
+    console.log(`Processing ${type} email for order ${orderId}`)
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        students (
-          name
-        ),
-        shipping_methods (
-          name
-        ),
-        order_items (
-          quantity,
-          price_at_time,
-          photos (
-            url
-          ),
-          products (
-            name
-          )
-        )
-      `)
-      .eq('id', orderId)
-      .single()
-
-    if (orderError || !order) {
-      console.error('Error fetching order:', orderError)
-      throw new Error(`Error fetching order: ${orderError?.message || 'Order not found'}`)
+    if (!RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is not set')
     }
 
-    console.log('Successfully fetched order data')
+    // Get order details from database if html is not provided
+    let emailHtml = html
+    let to: string[] = []
 
-    const orderItemsHtml = order.order_items.map(item => `
-      <tr>
-        <td class="py-4 px-6 border-b">${item.products.name}</td>
-        <td class="py-4 px-6 border-b text-center">${item.quantity}</td>
-        <td class="py-4 px-6 border-b text-right">${item.price_at_time}€</td>
-        <td class="py-4 px-6 border-b text-center">
-          <a href="${item.photos.url}" class="text-blue-600 hover:text-blue-800 underline">Ver foto</a>
-        </td>
-      </tr>
-    `).join('')
+    if (!html) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const shippingInfo = order.shipping_methods 
-      ? `<div class="mb-4">
-          <p class="text-gray-700"><strong>Método de envio:</strong> ${order.shipping_methods.name}</p>
-          <p class="text-gray-700"><strong>Morada:</strong> ${order.shipping_address}, ${order.shipping_postal_code} ${order.shipping_city}</p>
-         </div>`
-      : ''
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single()
 
-    const isCreatedEmail = type === 'created'
-    const subject = isCreatedEmail 
-      ? `Nova encomenda #${orderId}`
-      : `Pagamento recebido - Encomenda #${orderId}`
+      if (error || !order) {
+        throw new Error(`Failed to fetch order: ${error?.message || 'Order not found'}`)
+      }
 
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            /* Base styles */
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #333; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-            .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            .table th { background-color: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
-            .table td { padding: 12px; border-bottom: 1px solid #dee2e6; }
-            .total { margin-top: 20px; text-align: right; font-weight: bold; }
-            .footer { margin-top: 20px; text-align: center; color: #6c757d; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="color: #333; margin: 0;">${isCreatedEmail ? 'Nova encomenda' : 'Pagamento confirmado'}</h1>
-            </div>
-            <div class="content">
-              <p style="font-size: 16px;">Olá ${order.shipping_name},</p>
-              <p style="font-size: 16px; color: #555;">
-                ${isCreatedEmail 
-                  ? 'A sua encomenda foi criada com sucesso.' 
-                  : 'O pagamento da sua encomenda foi confirmado.'}
-              </p>
-              
-              <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h2 style="color: #333; margin-top: 0;">Detalhes da encomenda #${orderId}</h2>
-                <p style="margin: 5px 0;"><strong>Cliente:</strong> ${order.shipping_name}</p>
-                <p style="margin: 5px 0;"><strong>Email:</strong> ${order.email}</p>
-                <p style="margin: 5px 0;"><strong>Telefone:</strong> ${order.shipping_phone}</p>
-              </div>
-              
-              ${shippingInfo}
-              
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th style="text-align: left;">Produto</th>
-                    <th style="text-align: center;">Quantidade</th>
-                    <th style="text-align: right;">Preço</th>
-                    <th style="text-align: center;">Foto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${orderItemsHtml}
-                </tbody>
-              </table>
-              
-              <div class="total">
-                <p style="font-size: 18px; color: #333;">
-                  <strong>Total:</strong> ${order.total_amount}€
-                </p>
-              </div>
-            </div>
-            
-            <div class="footer">
-              <p>Obrigado pela sua compra!</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
+      to = [order.email]
+      emailHtml = `
+        <h2>${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}</h2>
+        <p>Total: ${order.total_amount}€</p>
+      `
+    }
 
-    // Send email to customer and admin
-    await sendEmail([order.email, ADMIN_EMAIL], subject, emailHtml)
+    console.log('Sending email with Resend:', {
+      to,
+      subject: `${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}`,
+      html: emailHtml
+    })
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to,
+        subject: `${type === 'created' ? 'Nova encomenda' : 'Pagamento confirmado'} #${orderId}`,
+        html: emailHtml,
+      }),
+    })
+
+    if (!res.ok) {
+      const error = await res.text()
+      console.error('Resend API error:', error)
+      throw new Error(`Resend API error: ${error}`)
+    }
+
+    const data = await res.json()
+    console.log('Email sent successfully:', data)
+
+    return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
 
   } catch (error) {
     console.error('Error in send-order-email function:', error)
