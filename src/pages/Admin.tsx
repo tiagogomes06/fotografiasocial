@@ -5,30 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Plus, Upload, QrCode, Users, School as SchoolIcon } from "lucide-react";
+import { Plus, Users, School as SchoolIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-interface School {
-  id: string;
-  name: string;
-  classes: Class[];
-}
-
-interface Class {
-  id: string;
-  name: string;
-  schoolId: string;
-  students: Student[];
-}
-
-interface Student {
-  id: string;
-  name: string;
-  accessCode: string;
-  classId: string;
-  photoUrl?: string;
-}
+import StudentActions from "@/components/StudentActions";
+import { School, Class, Student } from "@/types/admin";
 
 const Admin = () => {
   const [schools, setSchools] = useState<School[]>([]);
@@ -127,16 +108,36 @@ const Admin = () => {
     toast.success("Student added successfully");
   };
 
-  const handlePhotoUpload = (studentId: string) => {
-    // TODO: Implement photo upload functionality
-    console.log("Upload photo for student:", studentId);
-    toast.info("Photo upload coming soon!");
-  };
-
-  const handleGenerateQR = (accessCode: string) => {
-    // TODO: Implement QR code generation
-    console.log("Generate QR code for access code:", accessCode);
-    toast.info("QR code generation coming soon!");
+  const handlePhotoUploaded = (studentId: string, photoUrl: string) => {
+    const updatedSchools = schools.map(school => {
+      if (school.id === selectedSchool?.id) {
+        const updatedClasses = school.classes.map(cls => {
+          if (cls.id === selectedClass?.id) {
+            const updatedStudents = cls.students.map(student => {
+              if (student.id === studentId) {
+                return {
+                  ...student,
+                  photoUrl,
+                };
+              }
+              return student;
+            });
+            return {
+              ...cls,
+              students: updatedStudents,
+            };
+          }
+          return cls;
+        });
+        return {
+          ...school,
+          classes: updatedClasses,
+        };
+      }
+      return school;
+    });
+    
+    setSchools(updatedSchools);
   };
 
   return (
@@ -216,7 +217,7 @@ const Admin = () => {
           </Table>
         </section>
 
-        {/* Classes Section - Only visible when a school is selected */}
+        {/* Classes Section */}
         {selectedSchool && (
           <section className="space-y-6">
             <div className="flex justify-between items-center">
@@ -290,7 +291,7 @@ const Admin = () => {
           </section>
         )}
 
-        {/* Students Section - Only visible when a class is selected */}
+        {/* Students Section */}
         {selectedClass && (
           <section className="space-y-6">
             <div className="flex justify-between items-center">
@@ -360,24 +361,10 @@ const Admin = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePhotoUpload(student.id)}
-                        >
-                          <Upload className="h-4 w-4 mr-1" />
-                          Upload Photo
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleGenerateQR(student.accessCode)}
-                        >
-                          <QrCode className="h-4 w-4 mr-1" />
-                          QR Code
-                        </Button>
-                      </div>
+                      <StudentActions
+                        student={student}
+                        onPhotoUploaded={handlePhotoUploaded}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
