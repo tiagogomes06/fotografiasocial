@@ -19,7 +19,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
   const handleSingleDownload = (photoUrl: string, index: number) => {
-    downloadSinglePhoto(photoUrl, `${studentName}_photo_${index + 1}.jpg`);
+    downloadSinglePhoto(photoUrl, `${studentName}_foto_${index + 1}.jpg`);
   };
 
   const handleAllDownload = () => {
@@ -33,15 +33,15 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h2 className="text-xl md:text-2xl font-bold">Photos for {studentName}</h2>
+        <h2 className="text-xl md:text-2xl font-bold">Fotos de {studentName}</h2>
         <div className="flex flex-col sm:flex-row gap-2">
           <Button onClick={handleAllDownload} variant="outline" className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
-            Download All
+            Transferir Todas
           </Button>
           <Button onClick={goToStore} className="w-full sm:w-auto">
             <ShoppingBag className="mr-2 h-4 w-4" />
-            Go to Store
+            Ir para a Loja
           </Button>
         </div>
       </div>
@@ -54,7 +54,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                 <div className="cursor-pointer aspect-square">
                   <img
                     src={photo}
-                    alt={`Photo ${index + 1}`}
+                    alt={`Foto ${index + 1}`}
                     className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
                   />
                 </div>
@@ -63,7 +63,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                 <div className="relative group">
                   <img
                     src={photo}
-                    alt={`Photo ${index + 1}`}
+                    alt={`Foto ${index + 1}`}
                     className="w-full h-full object-contain rounded-lg"
                   />
                   <button
@@ -87,7 +87,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
               className="w-full"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download
+              Transferir
             </Button>
           </div>
         ))}

@@ -32,7 +32,7 @@ const PhotoCard = ({
         <div className="relative group cursor-pointer">
           <img
             src={photo}
-            alt="Photo"
+            alt="Foto"
             className={cn(
               "w-full aspect-square object-cover rounded-md transition-opacity",
               isSelected ? "opacity-100" : "hover:opacity-90"
@@ -42,13 +42,13 @@ const PhotoCard = ({
         
         {isSelected && (
           <div className="animate-fade-in" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-medium mb-2">Choose a product:</h4>
+            <h4 className="text-sm font-medium mb-2">Escolha um produto:</h4>
             <Select
               value={selectedProduct}
               onValueChange={onProductSelect}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a product" />
+                <SelectValue placeholder="Selecione um produto" />
               </SelectTrigger>
               <SelectContent className="bg-white border shadow-lg">
                 {products.map((product) => (
@@ -57,7 +57,7 @@ const PhotoCard = ({
                     value={product.id}
                     className="cursor-pointer hover:bg-gray-100"
                   >
-                    {product.name} - ${product.price}
+                    {product.name} - {product.price}€
                   </SelectItem>
                 ))}
               </SelectContent>

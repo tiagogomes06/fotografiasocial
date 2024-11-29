@@ -68,11 +68,11 @@ const Store = () => {
     setCart(prev => [...prev, ...newItems]);
     setSelectedPhotos([]);
     setProductSelections({});
-    toast.success("Items added to cart");
+    toast.success("Itens adicionados ao carrinho");
   };
 
   const proceedToCheckout = () => {
-    toast.info("Checkout functionality coming soon!");
+    toast.info("Funcionalidade de checkout em breve!");
   };
 
   return (
@@ -85,7 +85,7 @@ const Store = () => {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            Voltar
           </Button>
         </div>
 
@@ -106,12 +106,12 @@ const Store = () => {
         {selectedPhotos.length > 0 && (
           <div className="fixed bottom-4 left-0 right-0 bg-background border-t p-4 shadow-lg z-10">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <span>{selectedPhotos.length} photos selected</span>
+              <span>{selectedPhotos.length} fotos selecionadas</span>
               <Button
                 onClick={addToCart}
                 disabled={selectedPhotos.some(photo => !productSelections[photo])}
               >
-                Add to Cart
+                Adicionar ao Carrinho
               </Button>
             </div>
           </div>

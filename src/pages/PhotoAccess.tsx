@@ -22,7 +22,7 @@ const PhotoAccess = () => {
         .single();
 
       if (studentError || !student) {
-        toast.error("Invalid access code");
+        toast.error("Código de acesso inválido");
         return;
       }
 
@@ -32,16 +32,16 @@ const PhotoAccess = () => {
         .eq('student_id', student.id);
 
       if (photosError) {
-        toast.error("Failed to fetch photos");
+        toast.error("Falha ao obter as fotos");
         return;
       }
 
       setPhotos(photoData.map(p => p.url));
       setStudentName(student.name);
       setIsAuthenticated(true);
-      toast.success("Access granted!");
+      toast.success("Acesso concedido!");
     } catch (error) {
-      toast.error("An error occurred");
+      toast.error("Ocorreu um erro");
       console.error(error);
     }
   };
@@ -61,7 +61,7 @@ const PhotoAccess = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md mx-auto p-4 md:p-8 rounded-lg bg-secondary/50 backdrop-blur-sm border border-border/50"
       >
-        <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">Access Your Photos</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8">Aceder às Suas Fotos</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <button 
@@ -69,7 +69,7 @@ const PhotoAccess = () => {
             className="w-full p-3 md:p-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm md:text-base"
           >
             <QrCode className="w-4 h-4 md:w-5 md:h-5" />
-            Scan QR Code
+            Digitalizar Código QR
           </button>
           
           <div className="relative">
@@ -77,14 +77,14 @@ const PhotoAccess = () => {
               <div className="w-full border-t border-border/50" />
             </div>
             <div className="relative flex justify-center text-xs md:text-sm">
-              <span className="px-2 bg-secondary text-muted-foreground">or enter code</span>
+              <span className="px-2 bg-secondary text-muted-foreground">ou introduza o código</span>
             </div>
           </div>
 
           <div className="space-y-3 md:space-y-4">
             <div className="space-y-2">
               <label htmlFor="accessCode" className="text-sm font-medium block">
-                Access Code
+                Código de Acesso
               </label>
               <div className="relative">
                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
@@ -94,7 +94,7 @@ const PhotoAccess = () => {
                   value={accessCode}
                   onChange={(e) => setAccessCode(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm md:text-base"
-                  placeholder="Enter your access code"
+                  placeholder="Introduza o seu código de acesso"
                 />
               </div>
             </div>
@@ -104,7 +104,7 @@ const PhotoAccess = () => {
               className="w-full p-2.5 md:p-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm md:text-base font-medium"
               disabled={!accessCode}
             >
-              Access Photos
+              Aceder às Fotos
             </button>
           </div>
         </form>

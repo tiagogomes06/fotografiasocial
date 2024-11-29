@@ -10,13 +10,13 @@ const Index = () => {
           <h1 className="text-2xl font-semibold">PhotoAccess</h1>
           <nav className="space-x-6">
             <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">
-              Login
+              Entrar
             </Link>
             <Link 
               to="/access"
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
             >
-              Access Photos
+              Aceder às Fotos
             </Link>
           </nav>
         </div>
@@ -29,9 +29,9 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-5xl font-bold tracking-tight">Your School Memories</h2>
+            <h2 className="text-5xl font-bold tracking-tight">As Suas Memórias Escolares</h2>
             <p className="text-xl text-muted-foreground mt-4 max-w-2xl mx-auto">
-              Access and order your professional school photos with ease. Secure, simple, and beautifully presented.
+              Aceda e encomende as suas fotografias escolares profissionais com facilidade. Seguro, simples e lindamente apresentado.
             </p>
           </motion.div>
 
@@ -40,14 +40,14 @@ const Index = () => {
               to="/access"
               className="group bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
             >
-              Get Started
+              Começar
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               to="/store"
               className="bg-secondary text-secondary-foreground px-6 py-3 rounded-md hover:bg-secondary/80 transition-colors"
             >
-              Visit Store
+              Visitar Loja
             </Link>
           </div>
         </section>
@@ -56,18 +56,18 @@ const Index = () => {
           {[
             {
               icon: Lock,
-              title: "Secure Access",
-              description: "Access your photos with a unique code or QR scan",
+              title: "Acesso Seguro",
+              description: "Aceda às suas fotos com um código único ou digitalização QR",
             },
             {
               icon: Camera,
-              title: "Professional Quality",
-              description: "High-resolution photos captured by expert photographers",
+              title: "Qualidade Profissional",
+              description: "Fotografias de alta resolução capturadas por fotógrafos especializados",
             },
             {
               icon: ShoppingBag,
-              title: "Easy Ordering",
-              description: "Order prints and digital copies with simple payment options",
+              title: "Encomenda Fácil",
+              description: "Encomende impressões e cópias digitais com opções de pagamento simples",
             },
           ].map((feature, index) => (
             <motion.div
