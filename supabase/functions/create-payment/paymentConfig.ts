@@ -10,11 +10,12 @@ export interface PaymentConfig {
 
 export const getConfig = (): PaymentConfig => {
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  const eupagoKey = Deno.env.get('EUPAGO_API_KEY');
-
-  if (!stripeKey || !eupagoKey) {
-    throw new Error('Missing required environment variables');
+  if (!stripeKey) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
   }
+
+  // Using hardcoded EuPago key as previously established
+  const eupagoKey = 'da58-5a0d-2f22-0152-8f6d';
 
   return {
     stripeKey,

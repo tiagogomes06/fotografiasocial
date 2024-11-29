@@ -11,6 +11,28 @@ serve(async (req) => {
   }
 
   try {
+    // Check for required environment variables first
+    const requiredEnvVars = [
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'STRIPE_SECRET_KEY'
+    ];
+
+    const missingEnvVars = requiredEnvVars.filter(varName => !Deno.env.get(varName));
+    
+    if (missingEnvVars.length > 0) {
+      console.error('Missing environment variables:', missingEnvVars);
+      return new Response(
+        JSON.stringify({ 
+          error: `Missing required environment variables: ${missingEnvVars.join(', ')}` 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const config = getConfig()
