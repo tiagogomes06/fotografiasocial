@@ -30,7 +30,7 @@ serve(async (req) => {
     // Get order details from database
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('*, students(name, phone)')
+      .select('*, order_items(*, products(*)), students(name)')
       .eq('id', orderId)
       .single()
 
@@ -74,39 +74,54 @@ serve(async (req) => {
       paymentResponse = await response.json()
       console.log('EuPago response:', paymentResponse)
 
-      // Update order with payment details
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          payment_id: paymentResponse.referencia,
-          payment_status: 'pending',
-        })
-        .eq('id', orderId)
-
-      if (updateError) {
-        console.error('Error updating order:', updateError)
-        throw new Error('Failed to update order with payment details')
-      }
-
     } else if (paymentMethod === 'card') {
       console.log('Creating Stripe session')
-      // Stripe integration
+      
+      // Create line items from order items
+      const lineItems = order.order_items.map((item: any) => ({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: item.products.name,
+            description: `Photo print for ${order.students.name}`,
+          },
+          unit_amount: Math.round(item.price_at_time * 100), // Convert to cents
+        },
+        quantity: item.quantity,
+      }));
+
+      // Add shipping cost if applicable
+      if (order.shipping_method_id) {
+        const { data: shippingMethod } = await supabase
+          .from('shipping_methods')
+          .select('*')
+          .eq('id', order.shipping_method_id)
+          .single();
+
+        if (shippingMethod && shippingMethod.price > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: 'Shipping',
+                description: shippingMethod.name,
+              },
+              unit_amount: Math.round(shippingMethod.price * 100),
+            },
+            quantity: 1,
+          });
+        }
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `Order ${orderId}`,
-              description: `Order for ${order.shipping_name}`,
-            },
-            unit_amount: Math.round(order.total_amount * 100), // Convert to cents
-          },
-          quantity: 1,
-        }],
+        line_items: lineItems,
         mode: 'payment',
         success_url: `${req.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
+        metadata: {
+          order_id: orderId,
+        },
       })
 
       console.log('Stripe session created:', session.id)
@@ -114,22 +129,22 @@ serve(async (req) => {
         sessionId: session.id,
         url: session.url 
       }
-
-      // Update order with payment details
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          payment_id: session.id,
-          payment_status: 'pending',
-        })
-        .eq('id', orderId)
-
-      if (updateError) {
-        console.error('Error updating order:', updateError)
-        throw new Error('Failed to update order with payment details')
-      }
     } else {
       throw new Error(`Invalid payment method: ${paymentMethod}`)
+    }
+
+    // Update order with payment details
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        payment_id: paymentMethod === 'card' ? paymentResponse.sessionId : paymentResponse.referencia,
+        payment_status: 'pending',
+      })
+      .eq('id', orderId)
+
+    if (updateError) {
+      console.error('Error updating order:', updateError)
+      throw new Error('Failed to update order with payment details')
     }
 
     return new Response(
