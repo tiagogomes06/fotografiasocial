@@ -60,6 +60,12 @@ const Store = () => {
     }));
   };
 
+  const extractPhotoId = (photoUrl: string) => {
+    // Extract UUID from the URL
+    const matches = photoUrl.match(/photos\/([^/]+)\.[^.]+$/);
+    return matches ? matches[1] : null;
+  };
+
   const addToCart = () => {
     const studentId = localStorage.getItem('studentId');
     if (!studentId) {
@@ -72,19 +78,29 @@ const Store = () => {
       .filter(photo => productSelections[photo])
       .map(photo => {
         const product = products.find(p => p.id === productSelections[photo]);
+        const photoId = extractPhotoId(photo);
+        
+        if (!photoId) {
+          toast.error(`Erro ao processar foto: ${photo}`);
+          return null;
+        }
+
         return {
           photoUrl: photo,
-          photoId: photo,
+          photoId: photoId,
           productId: productSelections[photo],
           studentId: studentId,
           price: product?.price || 0
         };
-      });
+      })
+      .filter((item): item is CartItem => item !== null);
 
-    setCart(prev => [...prev, ...newItems]);
-    setSelectedPhotos([]);
-    setProductSelections({});
-    toast.success("Itens adicionados ao carrinho");
+    if (newItems.length > 0) {
+      setCart(prev => [...prev, ...newItems]);
+      setSelectedPhotos([]);
+      setProductSelections({});
+      toast.success("Itens adicionados ao carrinho");
+    }
   };
 
   const goToCart = () => {
