@@ -319,7 +319,7 @@ const Admin = () => {
                 {selectedClass.students.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>{student.name}</TableCell>
-                    <TableCell>{student.accessCode}</TableCell>
+                    <TableCell>{student.access_code}</TableCell>
                     <TableCell>
                       {student.photoUrl ? (
                         <img

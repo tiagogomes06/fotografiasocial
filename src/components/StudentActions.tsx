@@ -16,7 +16,7 @@ const StudentActions = ({ student, onPhotoUploaded }: StudentActionsProps) => {
         onPhotoUploaded={(photoUrl) => onPhotoUploaded(student.id, photoUrl)}
       />
       <StudentQRCode
-        accessCode={student.accessCode}
+        accessCode={student.access_code}
         studentName={student.name}
       />
     </div>
