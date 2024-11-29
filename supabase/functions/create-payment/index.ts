@@ -29,18 +29,25 @@ serve(async (req) => {
     const { orderId, paymentMethod, email, name } = await req.json()
     console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
+    // Fetch order with all related data in a single query
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
-        *, 
-        order_items(*, products(*)), 
-        students(name),
-        shipping_method(*)
+        *,
+        order_items (
+          *,
+          products (*),
+          photos (*)
+        ),
+        students (
+          name
+        ),
+        shipping_method (*)
       `)
       .eq('id', orderId)
       .single()
 
-    if (orderError) {
+    if (orderError || !order) {
       console.error('Error fetching order:', orderError)
       throw new Error('Order not found')
     }
@@ -62,6 +69,7 @@ serve(async (req) => {
         throw new Error(`Invalid payment method: ${paymentMethod}`);
     }
 
+    // Update order with payment details
     const { error: updateError } = await supabase
       .from('orders')
       .update({
