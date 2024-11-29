@@ -1,4 +1,5 @@
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno'
+import { corsHeaders } from './paymentConfig.ts'
 
 export interface PaymentResponse {
   sessionId?: string;
@@ -28,21 +29,18 @@ export const createStripePayment = async (
     quantity: 1,
   }));
 
-  if (order.shipping_method_id) {
-    const shippingMethod = order.shipping_method;
-    if (shippingMethod && shippingMethod.price > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: 'Shipping',
-            description: shippingMethod.name,
-          },
-          unit_amount: Math.round(shippingMethod.price * 100),
+  if (order.shipping_methods && order.shipping_methods.price > 0) {
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: 'Shipping',
+          description: order.shipping_methods.name,
         },
-        quantity: 1,
-      });
-    }
+        unit_amount: Math.round(order.shipping_methods.price * 100),
+      },
+      quantity: 1,
+    });
   }
 
   const session = await stripe.checkout.sessions.create({
