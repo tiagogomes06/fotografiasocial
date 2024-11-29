@@ -1,9 +1,40 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { QrCode, Key } from "lucide-react";
+import { toast } from "sonner";
+import PhotoGallery from "@/components/PhotoGallery";
 
 const PhotoAccess = () => {
   const [accessCode, setAccessCode] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [studentName, setStudentName] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Mock verification - replace with actual API call
+    if (accessCode) {
+      // Simulating photos fetch - replace with actual data
+      setPhotos([
+        "data:image/jpeg;base64,/9j...", // Replace with actual base64 images
+        "data:image/jpeg;base64,/9j...",
+      ]);
+      setStudentName("John Doe"); // Replace with actual student name
+      setIsAuthenticated(true);
+      toast.success("Access granted!");
+    } else {
+      toast.error("Invalid access code");
+    }
+  };
+
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <PhotoGallery photos={photos} studentName={studentName} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -14,8 +45,8 @@ const PhotoAccess = () => {
       >
         <h1 className="text-3xl font-bold text-center mb-8">Access Your Photos</h1>
         
-        <div className="space-y-6">
-          <button className="w-full p-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <button type="button" className="w-full p-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
             <QrCode className="w-5 h-5" />
             Scan QR Code
           </button>
@@ -48,13 +79,14 @@ const PhotoAccess = () => {
             </div>
             
             <button 
+              type="submit"
               className="w-full p-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               disabled={!accessCode}
             >
               Access Photos
             </button>
           </div>
-        </div>
+        </form>
       </motion.div>
     </div>
   );
