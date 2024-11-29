@@ -79,6 +79,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
     try {
       setIsProcessing(true);
+      toast.info("A processar o seu pedido...");
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -97,7 +98,10 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        toast.error(`Erro ao criar pedido: ${orderError.message}`);
+        throw orderError;
+      }
 
       const orderItems = cart.map(item => ({
         order_id: order.id,
@@ -110,9 +114,12 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        toast.error(`Erro ao adicionar itens ao pedido: ${itemsError.message}`);
+        throw itemsError;
+      }
 
-      const { data: payment } = await supabase.functions.invoke("create-payment", {
+      const { data: payment, error: paymentError } = await supabase.functions.invoke("create-payment", {
         body: { 
           orderId: order.id, 
           paymentMethod,
@@ -121,25 +128,51 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         },
       });
 
+      if (paymentError) {
+        toast.error(`Erro ao processar pagamento: ${paymentError.message}`);
+        throw paymentError;
+      }
+
       if (paymentMethod === "card") {
+        toast.success("Redirecionando para página de pagamento...");
         window.location.href = payment.url;
       } else {
         toast.success("Pedido criado com sucesso!");
+        
         if (paymentMethod === "mbway") {
-          toast.info("Por favor, confirme o pagamento na sua app MB WAY");
+          toast.info("Por favor, confirme o pagamento na sua app MB WAY", {
+            duration: 10000
+          });
+          
+          if (payment.error) {
+            toast.error(`Erro MBWay: ${payment.error}`, {
+              duration: 10000
+            });
+          }
         } else if (paymentMethod === "multibanco") {
-          toast.info(`
+          const message = `
             Referência Multibanco:
             Entidade: ${payment.entity}
             Referência: ${payment.reference}
             Valor: ${payment.amount}€
-          `);
+          `;
+          toast.info(message, {
+            duration: 20000
+          });
+          
+          if (payment.error) {
+            toast.error(`Erro Multibanco: ${payment.error}`, {
+              duration: 10000
+            });
+          }
         }
         navigate("/");
       }
     } catch (error) {
       console.error("Error processing order:", error);
-      toast.error("Erro ao processar o pedido. Por favor tente novamente.");
+      toast.error(`Erro ao processar o pedido: ${error.message || 'Erro desconhecido'}. Por favor tente novamente.`, {
+        duration: 10000
+      });
     } finally {
       setIsProcessing(false);
     }
