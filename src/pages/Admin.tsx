@@ -5,51 +5,138 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Plus, Upload, QrCode } from "lucide-react";
+import { Plus, Upload, QrCode, Users, School as SchoolIcon } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface School {
   id: string;
   name: string;
-  className: string;
+  classes: Class[];
+}
+
+interface Class {
+  id: string;
+  name: string;
+  schoolId: string;
   students: Student[];
 }
 
 interface Student {
   id: string;
   name: string;
-  code: string;
+  accessCode: string;
+  classId: string;
   photoUrl?: string;
 }
 
 const Admin = () => {
   const [schools, setSchools] = useState<School[]>([]);
-  const form = useForm({
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  
+  const schoolForm = useForm({
     defaultValues: {
       schoolName: "",
+    },
+  });
+
+  const classForm = useForm({
+    defaultValues: {
       className: "",
     },
   });
 
-  const onSubmit = (values: { schoolName: string; className: string }) => {
+  const studentForm = useForm({
+    defaultValues: {
+      studentName: "",
+    },
+  });
+
+  const generateAccessCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+
+  const onSubmitSchool = (values: { schoolName: string }) => {
     const newSchool: School = {
       id: crypto.randomUUID(),
       name: values.schoolName,
-      className: values.className,
-      students: [],
+      classes: [],
     };
     setSchools([...schools, newSchool]);
-    form.reset();
+    schoolForm.reset();
+    toast.success("School added successfully");
   };
 
-  const handlePhotoUpload = (schoolId: string) => {
+  const onSubmitClass = (values: { className: string }) => {
+    if (!selectedSchool) return;
+    
+    const newClass: Class = {
+      id: crypto.randomUUID(),
+      name: values.className,
+      schoolId: selectedSchool.id,
+      students: [],
+    };
+    
+    const updatedSchools = schools.map(school => {
+      if (school.id === selectedSchool.id) {
+        return {
+          ...school,
+          classes: [...school.classes, newClass],
+        };
+      }
+      return school;
+    });
+    
+    setSchools(updatedSchools);
+    classForm.reset();
+    toast.success("Class added successfully");
+  };
+
+  const onSubmitStudent = (values: { studentName: string }) => {
+    if (!selectedClass) return;
+    
+    const newStudent: Student = {
+      id: crypto.randomUUID(),
+      name: values.studentName,
+      accessCode: generateAccessCode(),
+      classId: selectedClass.id,
+    };
+    
+    const updatedSchools = schools.map(school => {
+      if (school.id === selectedSchool?.id) {
+        const updatedClasses = school.classes.map(cls => {
+          if (cls.id === selectedClass.id) {
+            return {
+              ...cls,
+              students: [...cls.students, newStudent],
+            };
+          }
+          return cls;
+        });
+        return {
+          ...school,
+          classes: updatedClasses,
+        };
+      }
+      return school;
+    });
+    
+    setSchools(updatedSchools);
+    studentForm.reset();
+    toast.success("Student added successfully");
+  };
+
+  const handlePhotoUpload = (studentId: string) => {
     // TODO: Implement photo upload functionality
-    console.log("Upload photos for school:", schoolId);
+    console.log("Upload photo for student:", studentId);
+    toast.info("Photo upload coming soon!");
   };
 
-  const handleGenerateQR = (schoolId: string) => {
+  const handleGenerateQR = (accessCode: string) => {
     // TODO: Implement QR code generation
-    console.log("Generate QR codes for school:", schoolId);
+    console.log("Generate QR code for access code:", accessCode);
+    toast.info("QR code generation coming soon!");
   };
 
   return (
@@ -60,10 +147,14 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="container pt-32 pb-16">
+      <main className="container pt-32 pb-16 space-y-8">
+        {/* Schools Section */}
         <section className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold">Schools & Classes</h2>
+            <h2 className="text-3xl font-bold flex items-center gap-2">
+              <SchoolIcon className="h-8 w-8" />
+              Schools
+            </h2>
             <Dialog>
               <DialogTrigger asChild>
                 <Button>
@@ -75,28 +166,16 @@ const Admin = () => {
                 <DialogHeader>
                   <DialogTitle>Add New School</DialogTitle>
                 </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <Form {...schoolForm}>
+                  <form onSubmit={schoolForm.handleSubmit(onSubmitSchool)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={schoolForm.control}
                       name="schoolName"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>School Name</FormLabel>
                           <FormControl>
                             <Input placeholder="Enter school name" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="className"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Class Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter class name" {...field} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -108,43 +187,195 @@ const Admin = () => {
             </Dialog>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>School Name</TableHead>
+                <TableHead>Classes</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {schools.map((school) => (
+                <TableRow key={school.id}>
+                  <TableCell>{school.name}</TableCell>
+                  <TableCell>{school.classes.length}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedSchool(school)}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Manage Classes
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+
+        {/* Classes Section - Only visible when a school is selected */}
+        {selectedSchool && (
+          <section className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">
+                Classes for {selectedSchool.name}
+              </h2>
+              <div className="space-x-2">
+                <Button variant="outline" onClick={() => setSelectedSchool(null)}>
+                  Back to Schools
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Class
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Class</DialogTitle>
+                    </DialogHeader>
+                    <Form {...classForm}>
+                      <form onSubmit={classForm.handleSubmit(onSubmitClass)} className="space-y-4">
+                        <FormField
+                          control={classForm.control}
+                          name="className"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Class Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter class name" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" className="w-full">Add Class</Button>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>School Name</TableHead>
-                  <TableHead>Class</TableHead>
+                  <TableHead>Class Name</TableHead>
                   <TableHead>Students</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schools.map((school) => (
-                  <TableRow key={school.id}>
-                    <TableCell>{school.name}</TableCell>
-                    <TableCell>{school.className}</TableCell>
-                    <TableCell>{school.students.length}</TableCell>
+                {selectedSchool.classes.map((cls) => (
+                  <TableRow key={cls.id}>
+                    <TableCell>{cls.name}</TableCell>
+                    <TableCell>{cls.students.length}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedClass(cls)}
+                      >
+                        <Users className="h-4 w-4 mr-1" />
+                        Manage Students
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </section>
+        )}
+
+        {/* Students Section - Only visible when a class is selected */}
+        {selectedClass && (
+          <section className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">
+                Students in {selectedClass.name}
+              </h2>
+              <div className="space-x-2">
+                <Button variant="outline" onClick={() => setSelectedClass(null)}>
+                  Back to Classes
+                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Student
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Student</DialogTitle>
+                    </DialogHeader>
+                    <Form {...studentForm}>
+                      <form onSubmit={studentForm.handleSubmit(onSubmitStudent)} className="space-y-4">
+                        <FormField
+                          control={studentForm.control}
+                          name="studentName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Student Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter student name" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" className="w-full">Add Student</Button>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Access Code</TableHead>
+                  <TableHead>Photo</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {selectedClass.students.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>{student.accessCode}</TableCell>
+                    <TableCell>
+                      {student.photoUrl ? (
+                        <img
+                          src={student.photoUrl}
+                          alt={student.name}
+                          className="h-10 w-10 object-cover rounded"
+                        />
+                      ) : (
+                        "No photo"
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePhotoUpload(school.id)}
+                          onClick={() => handlePhotoUpload(student.id)}
                         >
                           <Upload className="h-4 w-4 mr-1" />
-                          Upload Photos
+                          Upload Photo
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleGenerateQR(school.id)}
+                          onClick={() => handleGenerateQR(student.accessCode)}
                         >
                           <QrCode className="h-4 w-4 mr-1" />
-                          Generate QR
+                          QR Code
                         </Button>
                       </div>
                     </TableCell>
@@ -152,8 +383,8 @@ const Admin = () => {
                 ))}
               </TableBody>
             </Table>
-          </motion.div>
-        </section>
+          </section>
+        )}
       </main>
     </div>
   );
