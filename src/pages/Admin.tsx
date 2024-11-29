@@ -21,7 +21,7 @@ const Admin = () => {
 
   // Set up real-time subscriptions
   useEffect(() => {
-    const channel = supabase.channel('db-changes')
+    const channel = supabase.channel('schema-db-changes')
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
@@ -50,7 +50,15 @@ const Admin = () => {
       }, () => {
         queryClient.invalidateQueries({ queryKey: ['schools'] });
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Subscribed to all table changes');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Failed to subscribe to changes');
+          toast.error('Failed to subscribe to real-time updates');
+        }
+      });
 
     return () => {
       channel.unsubscribe();
