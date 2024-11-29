@@ -11,20 +11,22 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 interface EuPagoWebhookPayload {
-  valor?: string;
-  canal?: string;
-  referencia?: string;
-  transacao?: string;
-  identificador?: string;
-  mp?: string;
-  chave_api?: string;
-  data?: string;
+  valor: string;
+  canal: string;
+  referencia: string;
+  transacao: string;
+  identificador: string;
+  mp: string;
+  chave_api: string;
+  data: string;
   entidade?: string;
   comissao?: string;
   local?: string;
 }
 
 async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
+  console.log('Sending confirmation email for order:', orderId);
+  
   try {
     const emailHtml = `
       <h2>Pagamento Confirmado - Encomenda #${orderId}</h2>
@@ -50,14 +52,16 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
       console.error('Error sending payment confirmation email:', emailError);
       throw emailError;
     }
+    
+    console.log('Confirmation email sent successfully');
   } catch (error) {
     console.error('Failed to send payment confirmation email:', error);
     throw error;
   }
 }
 
-async function updateOrderStatus(orderId: string, status: string, paymentDetails: Partial<EuPagoWebhookPayload>) {
-  console.log(`Updating order ${orderId} with status ${status} and details:`, paymentDetails);
+async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookPayload) {
+  console.log(`Updating order ${orderId} with payment details:`, paymentDetails);
   
   try {
     // First get the order details for the email
@@ -76,9 +80,9 @@ async function updateOrderStatus(orderId: string, status: string, paymentDetails
     const { error: updateError } = await supabase
       .from('orders')
       .update({ 
-        payment_status: status,
+        payment_status: 'completed',
         payment_id: paymentDetails.transacao,
-        status: status === 'completed' ? 'processing' : 'pending'
+        status: 'processing'
       })
       .eq('id', orderId);
 
@@ -87,10 +91,10 @@ async function updateOrderStatus(orderId: string, status: string, paymentDetails
       throw updateError;
     }
 
-    // If payment is completed, send confirmation email
-    if (status === 'completed') {
-      await sendPaymentConfirmationEmail(orderId, order);
-    }
+    console.log('Order status updated successfully');
+    
+    // Send confirmation email
+    await sendPaymentConfirmationEmail(orderId, order);
   } catch (error) {
     console.error('Failed to process order update:', error);
     throw error;
@@ -109,7 +113,7 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
     throw new Error('Invalid payment notification: missing transaction ID or amount');
   }
 
-  console.log(`Processing successful payment for order ${orderId}:`, {
+  console.log(`Processing payment for order ${orderId}:`, {
     transactionId: payload.transacao,
     amount: payload.valor,
     method: payload.mp,
@@ -117,7 +121,7 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
     location: payload.local
   });
 
-  await updateOrderStatus(orderId, 'completed', payload);
+  await updateOrderStatus(orderId, payload);
   
   return { 
     success: true,
@@ -126,22 +130,39 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.text();
-    console.log('Received webhook body:', body);
-    
+    const url = new URL(req.url);
+    console.log('Received webhook request:', {
+      method: req.method,
+      url: url.toString()
+    });
+
     let payload: EuPagoWebhookPayload;
     
-    try {
-      payload = JSON.parse(body);
-    } catch {
-      const params = new URLSearchParams(body);
-      payload = Object.fromEntries(params.entries());
+    if (req.method === 'POST') {
+      const body = await req.text();
+      console.log('POST body:', body);
+      
+      try {
+        payload = JSON.parse(body);
+      } catch {
+        const params = new URLSearchParams(body);
+        payload = Object.fromEntries(params.entries()) as EuPagoWebhookPayload;
+      }
+    } else if (req.method === 'GET') {
+      // Handle GET request from EuPago
+      const params = url.searchParams;
+      payload = Object.fromEntries(params.entries()) as EuPagoWebhookPayload;
+    } else {
+      throw new Error(`Unsupported method: ${req.method}`);
     }
+
+    console.log('Parsed payload:', payload);
 
     const result = await handleEuPagoWebhook(payload);
 
