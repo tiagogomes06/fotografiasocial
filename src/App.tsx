@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Index from "./pages/Index";
 import PhotoAccess from "./pages/PhotoAccess";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/access" element={<PhotoAccess />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </AnimatePresence>
       </BrowserRouter>
