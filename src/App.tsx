@@ -9,6 +9,7 @@ import PhotoAccess from "./pages/PhotoAccess";
 import Admin from "./pages/Admin";
 import Store from "./pages/Store";
 import Cart from "./pages/Cart";
+import MBWayConfirmation from "./pages/MBWayConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => {
               <Route path="/admin" element={<Admin />} />
               <Route path="/store" element={<Store />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/mbway-confirmation" element={<MBWayConfirmation />} />
             </Routes>
           </AnimatePresence>
         </BrowserRouter>

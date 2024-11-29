@@ -93,18 +93,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       await createOrderItems(cart, order.id);
 
-      // Send order creation email
-      const { error: emailError } = await supabase.functions.invoke('send-order-email', {
-        body: { 
-          orderId: order.id,
-          type: 'created'
-        }
-      });
-
-      if (emailError) {
-        console.error('Error sending order email:', emailError);
-        toast.error('Erro ao enviar email de confirmação');
-      }
+      const selectedShippingMethod = shippingMethods.find(method => method.id === shippingMethod);
 
       // Add a longer delay (2 seconds) before processing payment
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -123,13 +112,26 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         toast.success("Pedido criado com sucesso!");
         
         if (paymentMethod === "mbway") {
-          toast.info("Por favor, confirme o pagamento na sua app MB WAY", {
-            duration: 10000
-          });
-          
           if (payment.error) {
             toast.error(`Erro MBWay: ${payment.error}`, {
               duration: 10000
+            });
+          } else {
+            // Navigate to MBWay confirmation page with order details
+            navigate("/mbway-confirmation", {
+              state: {
+                orderDetails: {
+                  orderId: order.id,
+                  name: formData.name,
+                  address: formData.address,
+                  city: formData.city,
+                  postalCode: formData.postalCode,
+                  email: formData.email,
+                  phone: formData.phone,
+                  shippingMethod: selectedShippingMethod?.name,
+                  total: order.total_amount
+                }
+              }
             });
           }
         } else if (paymentMethod === "multibanco") {
@@ -148,8 +150,8 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
               duration: 10000
             });
           }
+          navigate("/");
         }
-        navigate("/");
       }
     } catch (error) {
       console.error("Error processing order:", error);
