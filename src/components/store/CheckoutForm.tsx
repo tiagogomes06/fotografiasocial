@@ -95,9 +95,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       const selectedShippingMethod = shippingMethods.find(method => method.id === shippingMethod);
 
-      // Add a longer delay (2 seconds) before processing payment
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
       const payment = await processPayment(
         order.id,
         paymentMethod,
@@ -117,7 +114,18 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
               duration: 10000
             });
           } else {
-            // Navigate to MBWay confirmation page with order details
+            console.log("Navigating to MBWay confirmation with order details:", {
+              orderId: order.id,
+              name: formData.name,
+              address: formData.address,
+              city: formData.city,
+              postalCode: formData.postalCode,
+              email: formData.email,
+              phone: formData.phone,
+              shippingMethod: selectedShippingMethod?.name,
+              total: order.total_amount
+            });
+            
             navigate("/mbway-confirmation", {
               state: {
                 orderDetails: {
