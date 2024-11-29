@@ -89,6 +89,12 @@ const Store = () => {
           </Button>
         </div>
 
+        <div className="bg-muted/30 p-4 rounded-lg border border-border/50 mb-6">
+          <p className="text-muted-foreground">
+            Para fazer uma compra, clique na foto que deseja comprar e depois selecione o produto desejado no menu que aparece abaixo da foto.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {photos.map((photo: string, index: number) => (
             <PhotoCard
