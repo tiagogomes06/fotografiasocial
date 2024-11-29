@@ -1,18 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const FROM_EMAIL = 'encomendas@fotografiaescolar.duploefeito.com'
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_BSgJrjKk_GQr6KvL1JkjurhqXguUYSzNK'
+const FROM_EMAIL = 'encomedas@duploefeito.com'
+const ADMIN_EMAIL = 'gomes@duploefeito.com'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface OrderEmailData {
-  orderId: string;
-  type: 'created' | 'paid';
-}
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
@@ -20,18 +20,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    if (!RESEND_API_KEY) {
-      throw new Error('Missing RESEND_API_KEY')
-    }
-
-    const { orderId, type }: OrderEmailData = await req.json()
+    const { orderId, type } = await req.json()
     console.log(`Sending ${type} email for order ${orderId}`)
-
-    // Get order details from Supabase
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -61,7 +51,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Error fetching order: ${orderError?.message || 'Order not found'}`)
     }
 
-    // Prepare email content
     const orderItemsHtml = order.order_items.map(item => `
       <tr>
         <td>${item.products.name}</td>
@@ -81,32 +70,12 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Nova encomenda #${orderId}`
       : `Pagamento recebido - Encomenda #${orderId}`
 
-    const customerHtml = `
+    const emailHtml = `
       <h1>${isCreatedEmail ? 'Nova encomenda' : 'Pagamento confirmado'}</h1>
       <p>Olá ${order.shipping_name},</p>
       <p>${isCreatedEmail 
           ? 'A sua encomenda foi criada com sucesso.' 
           : 'O pagamento da sua encomenda foi confirmado.'}</p>
-      <h2>Detalhes da encomenda #${orderId}</h2>
-      <p>Cliente: ${order.shipping_name}</p>
-      <p>Email: ${order.email}</p>
-      <p>Telefone: ${order.shipping_phone}</p>
-      ${shippingInfo}
-      <h3>Produtos:</h3>
-      <table>
-        <tr>
-          <th>Produto</th>
-          <th>Quantidade</th>
-          <th>Preço</th>
-          <th>Foto</th>
-        </tr>
-        ${orderItemsHtml}
-      </table>
-      <p><strong>Total: ${order.total_amount}€</strong></p>
-    `
-
-    const adminHtml = `
-      <h1>${isCreatedEmail ? 'Nova encomenda recebida' : 'Pagamento recebido'}</h1>
       <h2>Detalhes da encomenda #${orderId}</h2>
       <p>Cliente: ${order.shipping_name}</p>
       <p>Email: ${order.email}</p>
@@ -136,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: FROM_EMAIL,
         to: [order.email],
         subject,
-        html: customerHtml,
+        html: emailHtml,
       }),
     })
 
@@ -149,9 +118,9 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
-        to: ['admin@fotografiaescolar.duploefeito.com'],
+        to: [ADMIN_EMAIL],
         subject,
-        html: adminHtml,
+        html: emailHtml,
       }),
     })
 
