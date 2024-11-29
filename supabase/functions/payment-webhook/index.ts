@@ -22,6 +22,46 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+async function sendOrderConfirmationEmail(orderId: string) {
+  try {
+    // Get order details
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *,
+          products (*)
+        )
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Send email notification
+    await supabase.functions.invoke('send-email', {
+      body: {
+        to: "eu@tiagogomes.pt",
+        subject: "Nova Compra Confirmada - Fotografia Escolar",
+        html: `
+          <h1>Nova compra confirmada</h1>
+          <p>Total: ${order.total_amount.toFixed(2)}€</p>
+          <h2>Itens:</h2>
+          <ul>
+            ${order.order_items.map((item: any) => 
+              `<li>${item.products.name} - ${item.price_at_time}€</li>`
+            ).join('')}
+          </ul>
+        `
+      }
+    });
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -51,6 +91,9 @@ serve(async (req) => {
           .from('orders')
           .update({ payment_status: 'completed' })
           .eq('payment_id', session.id)
+
+        // Send confirmation email
+        await sendOrderConfirmationEmail(session.metadata.order_id);
       }
 
     } else {
@@ -71,6 +114,9 @@ serve(async (req) => {
           .from('orders')
           .update({ payment_status: 'completed' })
           .eq('payment_id', identificador)
+
+        // Send confirmation email
+        await sendOrderConfirmationEmail(identificador);
       }
     }
 

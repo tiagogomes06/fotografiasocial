@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CartItem, Product } from "@/types/admin";
 import { ShoppingCart } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface CartSummaryProps {
@@ -16,31 +15,6 @@ const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
 
   const handleCheckout = async () => {
     try {
-      // Send email notification
-      const { error } = await supabase.functions.invoke('send-email', {
-        body: {
-          to: "eu@tiagogomes.pt",
-          subject: "Nova Compra - Fotografia Escolar",
-          html: `
-            <h1>Nova compra realizada</h1>
-            <p>Total: ${totalAmount.toFixed(2)}€</p>
-            <h2>Itens:</h2>
-            <ul>
-              ${cart.map(item => {
-                const product = products.find(p => p.id === item.productId);
-                return `<li>${product?.name} - ${item.price}€</li>`;
-              }).join('')}
-            </ul>
-          `
-        }
-      });
-
-      if (error) {
-        console.error("Erro ao enviar email:", error);
-        toast.error("Erro ao enviar notificação de compra");
-      }
-
-      // Continue with checkout
       onCheckout();
     } catch (error) {
       console.error("Erro ao processar checkout:", error);
