@@ -93,6 +93,9 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       await createOrderItems(cart, order.id);
 
+      // Add a small delay before processing payment
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const payment = await processPayment(
         order.id,
         paymentMethod,

@@ -44,11 +44,21 @@ export const createOrder = async (
   },
   paymentMethod: string
 ) => {
+  const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+  
+  const { data: shippingMethodData } = await supabase
+    .from("shipping_methods")
+    .select("price")
+    .eq("id", shippingMethod)
+    .single();
+
+  const finalAmount = totalAmount + (shippingMethodData?.price || 0);
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
       student_id: studentId,
-      total_amount: cart.reduce((sum, item) => sum + item.price, 0),
+      total_amount: finalAmount,
       shipping_method_id: shippingMethod,
       shipping_address: formData.address,
       shipping_city: formData.city,
@@ -57,6 +67,8 @@ export const createOrder = async (
       shipping_phone: formData.phone,
       email: formData.email,
       payment_method: paymentMethod,
+      status: 'pending',
+      payment_status: 'pending'
     })
     .select()
     .single();
@@ -91,6 +103,9 @@ export const processPayment = async (
   email: string,
   name: string
 ) => {
+  // Add a small delay to ensure order is fully created
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
   const { data: payment, error: paymentError } = await supabase.functions.invoke("create-payment", {
     body: { 
       orderId, 
