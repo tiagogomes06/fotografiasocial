@@ -1,9 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_BSgJrjKk_GQr6KvL1JkjurhqXguUYSzNK'
-// Using Resend's default verified sender until domain verification is complete
-const FROM_EMAIL = 'onboarding@resend.dev'
+const FROM_EMAIL = 'envio@fotografiaescolar.duploefeito.com'
 const ADMIN_EMAIL = 'gomes@duploefeito.com'
 
 const corsHeaders = {
@@ -18,29 +17,31 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 async function sendEmail(to: string[], subject: string, html: string) {
   console.log(`Attempting to send email to: ${to.join(', ')}`)
   
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+  const client = new SMTPClient({
+    connection: {
+      hostname: "fotografiaescolar.duploefeito.com",
+      port: 465,
+      tls: true,
+      auth: {
+        username: "envio@fotografiaescolar.duploefeito.com",
+        password: "Imacdejose1506!",
+      },
     },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    }),
-  })
+  });
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`Failed to send email to ${to.join(', ')}:`, errorText)
-    throw new Error(`Failed to send email: ${errorText}`)
+  try {
+    for (const recipient of to) {
+      const send = await client.send({
+        from: FROM_EMAIL,
+        to: recipient,
+        subject: subject,
+        html: html,
+      });
+      console.log(`Successfully sent email to ${recipient}:`, send)
+    }
+  } finally {
+    await client.close();
   }
-
-  const result = await response.json()
-  console.log(`Successfully sent email to ${to.join(', ')}:`, result)
-  return result
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -126,11 +127,8 @@ const handler = async (req: Request): Promise<Response> => {
       <p><strong>Total: ${order.total_amount}€</strong></p>
     `
 
-    // Send email to customer
-    await sendEmail([order.email], subject, emailHtml)
-    
-    // Send email to admin
-    await sendEmail([ADMIN_EMAIL], subject, emailHtml)
+    // Send email to customer and admin
+    await sendEmail([order.email, ADMIN_EMAIL], subject, emailHtml)
 
     return new Response(
       JSON.stringify({ success: true }),
