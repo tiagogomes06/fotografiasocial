@@ -14,6 +14,8 @@ export const createStripePayment = async (
   order: any,
   origin: string
 ): Promise<PaymentResponse> => {
+  console.log('Creating Stripe payment session');
+  
   const lineItems = order.order_items.map((item: any) => ({
     price_data: {
       currency: 'eur',
@@ -23,7 +25,7 @@ export const createStripePayment = async (
       },
       unit_amount: Math.round(item.price_at_time * 100),
     },
-    quantity: item.quantity,
+    quantity: 1,
   }));
 
   if (order.shipping_method_id) {
@@ -62,16 +64,17 @@ export const createStripePayment = async (
 
 export const createEupagoMBWayPayment = async (
   order: any,
-  origin: string
+  origin: string,
+  apiKey: string
 ): Promise<PaymentResponse> => {
-  const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY');
+  console.log('Creating EuPago MBWay payment');
   
   const response = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
     method: 'POST',
     headers: {
       'accept': 'application/json',
       'content-type': 'application/json',
-      'Authorization': `ApiKey ${EUPAGO_API_KEY}`,
+      'Authorization': `ApiKey ${apiKey}`,
     },
     body: JSON.stringify({
       payment: {
@@ -95,35 +98,42 @@ export const createEupagoMBWayPayment = async (
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('EuPago MBWay error:', errorText);
     throw new Error(`EuPago error: ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('EuPago MBWay response:', result);
+  return result;
 };
 
 export const createEupagoMultibancoPayment = async (
-  order: any
+  order: any,
+  apiKey: string
 ): Promise<PaymentResponse> => {
-  const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY');
+  console.log('Creating EuPago Multibanco payment');
   
   const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `ApiKey ${EUPAGO_API_KEY}`,
+      'Authorization': `ApiKey ${apiKey}`,
     },
     body: JSON.stringify({
       payment_method: 'multibanco',
       valor: order.total_amount,
-      chave: EUPAGO_API_KEY,
+      chave: apiKey,
       id: order.id,
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('EuPago Multibanco error:', errorText);
     throw new Error(`EuPago error: ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('EuPago Multibanco response:', result);
+  return result;
 };

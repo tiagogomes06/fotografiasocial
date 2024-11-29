@@ -8,15 +8,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
+const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY')!
 
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
-const stripe = new Stripe(STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
   httpClient: Stripe.createFetchHttpClient(),
 })
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,7 +26,7 @@ serve(async (req) => {
   }
 
   try {
-    const { orderId, paymentMethod } = await req.json()
+    const { orderId, paymentMethod, email, name } = await req.json()
     console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
     const { data: order, error: orderError } = await supabase
@@ -48,10 +50,10 @@ serve(async (req) => {
 
     switch (paymentMethod) {
       case 'mbway':
-        paymentResponse = await createEupagoMBWayPayment(order, req.headers.get('origin') || '');
+        paymentResponse = await createEupagoMBWayPayment(order, req.headers.get('origin') || '', EUPAGO_API_KEY);
         break;
       case 'multibanco':
-        paymentResponse = await createEupagoMultibancoPayment(order);
+        paymentResponse = await createEupagoMultibancoPayment(order, EUPAGO_API_KEY);
         break;
       case 'card':
         paymentResponse = await createStripePayment(stripe, order, req.headers.get('origin') || '');
