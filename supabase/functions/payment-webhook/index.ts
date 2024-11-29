@@ -22,9 +22,17 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+async function updateOrderStatus(orderId: string, status: string) {
+  const { error } = await supabase
+    .from('orders')
+    .update({ payment_status: status })
+    .eq('id', orderId);
+
+  if (error) throw error;
+}
+
 async function sendOrderConfirmationEmail(orderId: string) {
   try {
-    // Get order details
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -32,27 +40,36 @@ async function sendOrderConfirmationEmail(orderId: string) {
         order_items (
           *,
           products (*)
-        )
+        ),
+        shipping_method (*)
       `)
       .eq('id', orderId)
       .single();
 
     if (orderError) throw orderError;
 
-    // Send email notification
+    const itemsList = order.order_items
+      .map((item: any) => `${item.products.name} - ${item.price_at_time}€`)
+      .join('<br>');
+
+    const shippingInfo = order.shipping_method 
+      ? `<p>Método de envio: ${order.shipping_method.name} - ${order.shipping_method.price}€</p>`
+      : '';
+
     await supabase.functions.invoke('send-email', {
       body: {
-        to: "eu@tiagogomes.pt",
-        subject: "Nova Compra Confirmada - Fotografia Escolar",
+        to: order.email,
+        subject: "Confirmação de Compra - Fotografia Escolar",
         html: `
-          <h1>Nova compra confirmada</h1>
-          <p>Total: ${order.total_amount.toFixed(2)}€</p>
-          <h2>Itens:</h2>
-          <ul>
-            ${order.order_items.map((item: any) => 
-              `<li>${item.products.name} - ${item.price_at_time}€</li>`
-            ).join('')}
-          </ul>
+          <h1>Confirmação de Compra</h1>
+          <p>Caro(a) ${order.shipping_name},</p>
+          <p>O seu pagamento foi confirmado com sucesso!</p>
+          <h2>Detalhes da compra:</h2>
+          <p>Número do pedido: ${order.id}</p>
+          ${itemsList}
+          ${shippingInfo}
+          <p><strong>Total: ${order.total_amount.toFixed(2)}€</strong></p>
+          <p>Obrigado pela sua compra!</p>
         `
       }
     });
@@ -63,7 +80,6 @@ async function sendOrderConfirmationEmail(orderId: string) {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -73,7 +89,6 @@ serve(async (req) => {
     const eupago_signature = req.headers.get('x-eupago-signature')
 
     if (signature) {
-      // Handle Stripe webhook
       const body = await req.text()
       const event = await stripe.webhooks.constructEventAsync(
         body,
@@ -87,17 +102,11 @@ serve(async (req) => {
 
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object
-        await supabase
-          .from('orders')
-          .update({ payment_status: 'completed' })
-          .eq('payment_id', session.id)
-
-        // Send confirmation email
-        await sendOrderConfirmationEmail(session.metadata.order_id);
+        await updateOrderStatus(session.metadata.order_id, 'completed')
+        await sendOrderConfirmationEmail(session.metadata.order_id)
       }
 
-    } else {
-      // Handle EuPago webhook
+    } else if (eupago_signature) {
       const { valor, canal, referencia, transacao, identificador } = await req.json()
       
       console.log('Received EuPago webhook:', { 
@@ -108,15 +117,11 @@ serve(async (req) => {
         identificador 
       })
 
-      // Verify the payment status and update the order
       if (transacao === 'paid') {
-        await supabase
-          .from('orders')
-          .update({ payment_status: 'completed' })
-          .eq('payment_id', identificador)
-
-        // Send confirmation email
-        await sendOrderConfirmationEmail(identificador);
+        await updateOrderStatus(identificador, 'completed')
+        await sendOrderConfirmationEmail(identificador)
+      } else if (transacao === 'failed') {
+        await updateOrderStatus(identificador, 'failed')
       }
     }
 
