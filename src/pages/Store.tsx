@@ -61,12 +61,26 @@ const Store = () => {
   };
 
   const extractPhotoId = (photoUrl: string) => {
-    // Extract UUID from the URL
     const matches = photoUrl.match(/photos\/([^/]+)\.[^.]+$/);
     return matches ? matches[1] : null;
   };
 
-  const addToCart = () => {
+  const verifyPhotoExists = async (photoId: string) => {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("id")
+      .eq("id", photoId)
+      .single();
+    
+    if (error) {
+      console.error("Error verifying photo:", error);
+      return false;
+    }
+    
+    return !!data;
+  };
+
+  const addToCart = async () => {
     const studentId = localStorage.getItem('studentId');
     if (!studentId) {
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
@@ -74,29 +88,34 @@ const Store = () => {
       return;
     }
 
-    const newItems = selectedPhotos
-      .filter(photo => productSelections[photo])
-      .map(photo => {
-        const product = products.find(p => p.id === productSelections[photo]);
-        const photoId = extractPhotoId(photo);
-        
-        if (!photoId) {
-          toast.error(`Erro ao processar foto: ${photo}`);
-          return null;
-        }
+    const validItems: CartItem[] = [];
+    
+    for (const photo of selectedPhotos.filter(photo => productSelections[photo])) {
+      const product = products.find(p => p.id === productSelections[photo]);
+      const photoId = extractPhotoId(photo);
+      
+      if (!photoId) {
+        toast.error(`Erro ao processar foto: ${photo}`);
+        continue;
+      }
 
-        return {
-          photoUrl: photo,
-          photoId: photoId,
-          productId: productSelections[photo],
-          studentId: studentId,
-          price: product?.price || 0
-        };
-      })
-      .filter((item): item is CartItem => item !== null);
+      const photoExists = await verifyPhotoExists(photoId);
+      if (!photoExists) {
+        toast.error(`Foto não encontrada no banco de dados: ${photo}`);
+        continue;
+      }
 
-    if (newItems.length > 0) {
-      setCart(prev => [...prev, ...newItems]);
+      validItems.push({
+        photoUrl: photo,
+        photoId: photoId,
+        productId: productSelections[photo],
+        studentId: studentId,
+        price: product?.price || 0
+      });
+    }
+
+    if (validItems.length > 0) {
+      setCart(prev => [...prev, ...validItems]);
       setSelectedPhotos([]);
       setProductSelections({});
       toast.success("Itens adicionados ao carrinho");
