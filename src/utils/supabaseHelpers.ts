@@ -61,7 +61,7 @@ export const uploadPhoto = async (file: File, studentId: string) => {
   return data;
 };
 
-export const fetchSchools = async () => {
+export const fetchSchools = async (): Promise<School[]> => {
   const { data, error } = await supabase
     .from('schools')
     .select(`
@@ -73,5 +73,26 @@ export const fetchSchools = async () => {
     `);
   
   if (error) throw error;
-  return data as School[];
+  
+  // Transform the data to match our types
+  const schools = data.map((school): School => ({
+    id: school.id,
+    name: school.name,
+    created_at: school.created_at,
+    classes: school.classes.map((cls): Class => ({
+      id: cls.id,
+      name: cls.name,
+      school_id: cls.school_id,
+      created_at: cls.created_at,
+      students: cls.students.map((student): Student => ({
+        id: student.id,
+        name: student.name,
+        access_code: student.access_code,
+        class_id: student.class_id,
+        created_at: student.created_at
+      }))
+    }))
+  }));
+
+  return schools;
 };
