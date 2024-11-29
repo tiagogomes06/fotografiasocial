@@ -103,8 +103,8 @@ export const processPayment = async (
   email: string,
   name: string
 ) => {
-  // Add a small delay to ensure order is fully created
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Add a longer delay (2 seconds) to ensure order is fully created
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   const { data: payment, error: paymentError } = await supabase.functions.invoke("create-payment", {
     body: { 
