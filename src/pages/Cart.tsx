@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import CartSummary from "@/components/store/CartSummary";
 import CheckoutForm from "@/components/store/CheckoutForm";
 import { CartItem, Product } from "@/types/admin";
+import { toast } from "sonner";
 
 const Cart = () => {
   const location = useLocation();
@@ -17,6 +18,10 @@ const Cart = () => {
   };
 
   const startCheckout = () => {
+    if (!cart[0]?.studentId) {
+      toast.error("Erro: Carrinho inválido. Por favor, volte à loja e adicione os itens novamente.");
+      return;
+    }
     setIsCheckingOut(true);
   };
 
