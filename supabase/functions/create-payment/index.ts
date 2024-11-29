@@ -20,16 +20,12 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+// Helper function to wait for a specified time
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  try {
-    const { orderId, paymentMethod, email, name } = await req.json()
-    console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
-
-    // Fetch order with all related data in a single query
+// Helper function to fetch order with retries
+async function fetchOrderWithRetries(orderId: string, maxRetries = 3): Promise<any> {
+  for (let i = 0; i < maxRetries; i++) {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -45,10 +41,38 @@ serve(async (req) => {
         shipping_method (*)
       `)
       .eq('id', orderId)
-      .single()
+      .single();
 
-    if (orderError || !order) {
-      console.error('Error fetching order:', orderError)
+    if (order) {
+      return { order, error: null };
+    }
+
+    if (i < maxRetries - 1) {
+      console.log(`Attempt ${i + 1}: Order not found, retrying after delay...`);
+      await delay(1000); // Wait 1 second before retrying
+    }
+  }
+
+  return { order: null, error: new Error('Order not found after multiple attempts') };
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const { orderId, paymentMethod, email, name } = await req.json()
+    console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
+
+    // Add initial delay to allow for order creation to complete
+    await delay(500);
+
+    // Fetch order with retries
+    const { order, error } = await fetchOrderWithRetries(orderId);
+
+    if (error || !order) {
+      console.error('Error fetching order:', error)
       throw new Error('Order not found')
     }
 
