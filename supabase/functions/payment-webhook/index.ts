@@ -25,7 +25,8 @@ interface EuPagoWebhookPayload {
 }
 
 async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
-  console.log('Sending confirmation email for order:', orderId);
+  console.log('[payment-webhook] Sending confirmation email for order:', orderId);
+  console.log('[payment-webhook] Order details:', orderDetails);
   
   try {
     const emailHtml = `
@@ -40,6 +41,7 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
       <p>Obrigado pela sua compra!</p>
     `;
 
+    console.log('[payment-webhook] Invoking send-order-email function');
     const { error: emailError } = await supabase.functions.invoke('send-order-email', {
       body: { 
         orderId,
@@ -49,13 +51,13 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
     });
 
     if (emailError) {
-      console.error('Error sending payment confirmation email:', emailError);
+      console.error('[payment-webhook] Error sending payment confirmation email:', emailError);
       throw emailError;
     }
     
-    console.log('Confirmation email sent successfully');
+    console.log('[payment-webhook] Confirmation email sent successfully');
   } catch (error) {
-    console.error('Failed to send payment confirmation email:', error);
+    console.error('[payment-webhook] Failed to send payment confirmation email:', error);
     throw error;
   }
 }

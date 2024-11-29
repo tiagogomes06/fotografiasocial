@@ -13,20 +13,21 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting order email process...');
+    console.log('[send-order-email] Starting order email process...');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase configuration');
+      console.error('[send-order-email] Missing Supabase configuration');
       throw new Error('Server configuration error');
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[send-order-email] Supabase client created');
 
     const { orderId, type } = await req.json();
-    console.log(`Processing ${type} email for order: ${orderId}`);
+    console.log(`[send-order-email] Processing ${type} email for order: ${orderId}`);
 
     // Fetch order details with all related information
     const { data: order, error: orderError } = await supabase
@@ -52,60 +53,44 @@ serve(async (req) => {
       .single();
 
     if (orderError) {
-      console.error('Error fetching order:', orderError);
+      console.error('[send-order-email] Error fetching order:', orderError);
       throw orderError;
     }
 
     if (!order) {
-      console.error('Order not found:', orderId);
+      console.error('[send-order-email] Order not found:', orderId);
       throw new Error('Order not found');
     }
 
-    console.log('Order details retrieved:', order);
+    console.log('[send-order-email] Order details retrieved:', order);
+
+    if (!order.email) {
+      console.error('[send-order-email] No email address found for order:', orderId);
+      throw new Error('No email address associated with order');
+    }
 
     // Generate email content
+    console.log('[send-order-email] Generating email template...');
     const html = createEmailTemplate(order, type);
 
     // Send email to customer
-    if (order.email) {
-      console.log(`Sending ${type} email to customer:`, order.email);
-      
-      const { error: emailError } = await supabase.functions.invoke('send-email', {
-        body: { 
-          to: order.email,
-          subject: type === 'created' ? 
-            `Confirmação de Encomenda #${orderId}` : 
-            `Pagamento Confirmado - Encomenda #${orderId}`,
-          html: html
-        }
-      });
-
-      if (emailError) {
-        console.error('Error sending customer email:', emailError);
-        throw emailError;
+    console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
+    const { error: emailError } = await supabase.functions.invoke('send-email', {
+      body: { 
+        to: order.email,
+        subject: type === 'created' ? 
+          `Confirmação de Encomenda #${orderId}` : 
+          `Pagamento Confirmado - Encomenda #${orderId}`,
+        html: html
       }
-    } else {
-      console.warn('No customer email address found for order:', orderId);
+    });
+
+    if (emailError) {
+      console.error('[send-order-email] Error sending email:', emailError);
+      throw emailError;
     }
 
-    // Send notification to admin for completed payments
-    if (type === 'paid') {
-      console.log('Sending admin notification for paid order');
-      
-      const adminHtml = createEmailTemplate(order, type, true);
-      const { error: adminEmailError } = await supabase.functions.invoke('send-email', {
-        body: { 
-          to: "envio@fotografiaescolar.duploefeito.com",
-          subject: `[ADMIN] Novo Pagamento - Encomenda #${orderId}`,
-          html: adminHtml
-        }
-      });
-
-      if (adminEmailError) {
-        console.error('Error sending admin email:', adminEmailError);
-        throw adminEmailError;
-      }
-    }
+    console.log('[send-order-email] Email sent successfully');
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -118,8 +103,8 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Detailed error in send-order-email:', error);
-    console.error('Error stack trace:', error.stack);
+    console.error('[send-order-email] Error in send-order-email:', error);
+    console.error('[send-order-email] Error stack trace:', error.stack);
     return new Response(
       JSON.stringify({ 
         error: error.message,
