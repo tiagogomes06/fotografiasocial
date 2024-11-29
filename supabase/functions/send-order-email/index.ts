@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || 're_BSgJrjKk_GQr6KvL1JkjurhqXguUYSzNK'
-// Temporarily use Resend's default verified sender email until domain is verified
-const FROM_EMAIL = 'onboarding@resend.dev'
+// Using verified Gmail address
+const FROM_EMAIL = 'gomesduplo11@gmail.com'
 const ADMIN_EMAIL = 'gomes@duploefeito.com'
 
 const corsHeaders = {
