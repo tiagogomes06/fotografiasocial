@@ -3,18 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CartItem } from "@/types/admin";
 import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
+import ShippingForm from "./ShippingForm";
+import PaymentMethodSelect from "./PaymentMethodSelect";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -69,7 +62,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     try {
       setIsProcessing(true);
 
-      // Create order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -88,7 +80,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       if (orderError) throw orderError;
 
-      // Create order items
       const orderItems = cart.map(item => ({
         order_id: order.id,
         photo_id: item.photoId,
@@ -102,16 +93,13 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       if (itemsError) throw itemsError;
 
-      // Process payment
       const { data: payment } = await supabase.functions.invoke("create-payment", {
         body: { orderId: order.id, paymentMethod },
       });
 
       if (paymentMethod === "card") {
-        // Redirect to Stripe Checkout
         window.location.href = payment.url;
       } else {
-        // Show payment details for EuPago methods
         toast.success("Pedido criado com sucesso!");
         if (paymentMethod === "mbway") {
           toast.info("Por favor, confirme o pagamento na sua app MB WAY");
@@ -135,92 +123,19 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Dados de Envio</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              required
-            />
-          </div>
+      <ShippingForm
+        formData={formData}
+        setFormData={setFormData}
+        shippingMethod={shippingMethod}
+        setShippingMethod={setShippingMethod}
+        shippingMethods={shippingMethods}
+        isPickupMethod={isPickupMethod}
+      />
 
-          <div>
-            <Label>Método de Envio</Label>
-            <Select value={shippingMethod} onValueChange={setShippingMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o método de envio" />
-              </SelectTrigger>
-              <SelectContent>
-                {shippingMethods.map((method) => (
-                  <SelectItem key={method.id} value={method.id}>
-                    {method.name} {method.price > 0 ? `(${method.price}€)` : "(Grátis)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {!isPickupMethod && (
-            <>
-              <div>
-                <Label htmlFor="address">Morada</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="postalCode">Código Postal</Label>
-                <Input
-                  id="postalCode"
-                  value={formData.postalCode}
-                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="city">Cidade</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Método de Pagamento</h2>
-        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o método de pagamento" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="mbway">MBWay</SelectItem>
-            <SelectItem value="multibanco">Multibanco</SelectItem>
-            <SelectItem value="card">Cartão de Crédito</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <PaymentMethodSelect
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+      />
 
       <div className="flex gap-4">
         <Button 

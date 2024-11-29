@@ -33,4 +33,6 @@ export interface CartItem {
   photoUrl: string;
   productId: string;
   price: number;
+  studentId: string;
+  photoId: string;
 }
