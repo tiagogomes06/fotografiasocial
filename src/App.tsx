@@ -14,9 +14,9 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <BrowserRouter>
+    <TooltipProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
+        <BrowserRouter>
           <Toaster />
           <Sonner />
           <AnimatePresence mode="wait">
@@ -28,9 +28,9 @@ const App = () => {
               <Route path="/cart" element={<Cart />} />
             </Routes>
           </AnimatePresence>
-        </TooltipProvider>
+        </BrowserRouter>
       </QueryClientProvider>
-    </BrowserRouter>
+    </TooltipProvider>
   );
 };
 
