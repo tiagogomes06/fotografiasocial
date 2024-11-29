@@ -50,12 +50,12 @@ const PhotoCard = ({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a product" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border shadow-lg">
                 {products.map((product) => (
                   <SelectItem 
                     key={product.id} 
                     value={product.id}
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-gray-100"
                   >
                     {product.name} - ${product.price}
                   </SelectItem>
