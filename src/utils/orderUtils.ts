@@ -7,13 +7,14 @@ export const ensurePhotosExist = async (cart: CartItem[]) => {
     const { data: existingPhotos, error: queryError } = await supabase
       .from("photos")
       .select("id")
-      .eq("id", item.photoId);
+      .eq("id", item.photoId)
+      .maybeSingle(); // Using maybeSingle() instead of single() to handle no results
 
     if (queryError) {
       throw new Error(`Failed to query photo: ${queryError.message}`);
     }
 
-    if (!existingPhotos || existingPhotos.length === 0) {
+    if (!existingPhotos) {
       const { error: createError } = await supabase
         .from("photos")
         .insert({
