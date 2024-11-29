@@ -1,31 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno'
-import { createStripePayment, createEupagoMBWayPayment, createEupagoMultibancoPayment } from './paymentProviders.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
-const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY')!
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-  httpClient: Stripe.createFetchHttpClient(),
-})
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')!
+    const eupagoKey = Deno.env.get('EUPAGO_API_KEY')!
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: '2022-11-15',
+      httpClient: Stripe.createFetchHttpClient(),
+    })
 
-// Helper function to wait for a specified time
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    const { orderId, paymentMethod, email, name } = await req.json()
+    console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
-// Helper function to fetch order with retries
-async function fetchOrderWithRetries(orderId: string, maxRetries = 3): Promise<any> {
-  for (let i = 0; i < maxRetries; i++) {
+    // Fetch the order with all related data
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -35,86 +38,142 @@ async function fetchOrderWithRetries(orderId: string, maxRetries = 3): Promise<a
           products (*),
           photos (*)
         ),
-        students (
-          name
-        ),
+        students (*),
         shipping_method (*)
       `)
       .eq('id', orderId)
-      .single();
+      .single()
 
-    if (order) {
-      return { order, error: null };
+    if (orderError || !order) {
+      console.error('Error fetching order:', orderError)
+      return new Response(
+        JSON.stringify({ error: 'Order not found' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    if (i < maxRetries - 1) {
-      console.log(`Attempt ${i + 1}: Order not found, retrying after delay...`);
-      await delay(1000); // Wait 1 second before retrying
-    }
-  }
+    console.log('Order found:', order)
 
-  return { order: null, error: new Error('Order not found after multiple attempts') };
-}
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  try {
-    const { orderId, paymentMethod, email, name } = await req.json()
-    console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
-
-    // Add initial delay to allow for order creation to complete
-    await delay(500);
-
-    // Fetch order with retries
-    const { order, error } = await fetchOrderWithRetries(orderId);
-
-    if (error || !order) {
-      console.error('Error fetching order:', error)
-      throw new Error('Order not found')
-    }
-
-    console.log('Order details:', order)
-    let paymentResponse;
+    let paymentResponse
 
     switch (paymentMethod) {
-      case 'mbway':
-        paymentResponse = await createEupagoMBWayPayment(order, req.headers.get('origin') || '', EUPAGO_API_KEY);
-        break;
-      case 'multibanco':
-        paymentResponse = await createEupagoMultibancoPayment(order, EUPAGO_API_KEY);
-        break;
       case 'card':
-        paymentResponse = await createStripePayment(stripe, order, req.headers.get('origin') || '');
-        break;
+        const lineItems = order.order_items.map((item: any) => ({
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: item.products.name,
+              description: `Photo print for ${order.students.name}`,
+            },
+            unit_amount: Math.round(item.price_at_time * 100),
+          },
+          quantity: 1,
+        }))
+
+        if (order.shipping_method && order.shipping_method.price > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: 'Shipping',
+                description: order.shipping_method.name,
+              },
+              unit_amount: Math.round(order.shipping_method.price * 100),
+            },
+            quantity: 1,
+          })
+        }
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: lineItems,
+          mode: 'payment',
+          success_url: `${req.headers.get('origin')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
+          metadata: {
+            order_id: orderId,
+          },
+        })
+
+        paymentResponse = { 
+          sessionId: session.id,
+          url: session.url 
+        }
+        break
+
+      case 'mbway':
+        const mbwayResponse = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'Authorization': `ApiKey ${eupagoKey}`,
+          },
+          body: JSON.stringify({
+            payment: {
+              identifier: orderId,
+              amount: {
+                value: order.total_amount,
+                currency: 'EUR'
+              },
+              successUrl: `${req.headers.get('origin')}/payment-success`,
+              failUrl: `${req.headers.get('origin')}/payment-cancelled`,
+              backUrl: `${req.headers.get('origin')}/cart`,
+              lang: 'PT'
+            },
+            customer: {
+              notify: true,
+              phone: order.shipping_phone,
+              name: order.shipping_name,
+            }
+          })
+        })
+
+        if (!mbwayResponse.ok) {
+          const errorText = await mbwayResponse.text()
+          console.error('EuPago MBWay error:', errorText)
+          throw new Error(`EuPago error: ${errorText}`)
+        }
+
+        paymentResponse = await mbwayResponse.json()
+        break
+
+      case 'multibanco':
+        const multibancoResponse = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `ApiKey ${eupagoKey}`,
+          },
+          body: JSON.stringify({
+            payment_method: 'multibanco',
+            valor: order.total_amount,
+            chave: eupagoKey,
+            id: orderId,
+          }),
+        })
+
+        if (!multibancoResponse.ok) {
+          const errorText = await multibancoResponse.text()
+          console.error('EuPago Multibanco error:', errorText)
+          throw new Error(`EuPago error: ${errorText}`)
+        }
+
+        paymentResponse = await multibancoResponse.json()
+        break
+
       default:
-        throw new Error(`Invalid payment method: ${paymentMethod}`);
-    }
-
-    // Update order with payment details
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        payment_id: paymentMethod === 'card' ? paymentResponse.sessionId : paymentResponse.reference,
-        payment_status: 'pending',
-      })
-      .eq('id', orderId)
-
-    if (updateError) {
-      console.error('Error updating order:', updateError)
-      throw new Error('Failed to update order with payment details')
+        throw new Error(`Invalid payment method: ${paymentMethod}`)
     }
 
     return new Response(
       JSON.stringify(paymentResponse),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
 
   } catch (error) {
@@ -123,11 +182,8 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 400,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     )
   }
 })
