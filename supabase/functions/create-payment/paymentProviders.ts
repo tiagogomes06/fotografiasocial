@@ -92,7 +92,7 @@ export const createEupagoMBWayPayment = async (
     const response = await fetch('https://clientes.eupago.pt/api/v1.02/mbway/create', {
       method: 'POST',
       headers: {
-        'Authorization': `ApiKey ${apiKey}`,
+        'Authorization': 'ApiKey da58-5a0d-2f22-0152-8f6d',
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
@@ -123,7 +123,7 @@ export const createEupagoMultibancoPayment = async (
   const payload = {
     payment_method: 'multibanco',
     valor: order.total_amount,
-    chave: apiKey,
+    chave: 'da58-5a0d-2f22-0152-8f6d',
     id: order.id
   };
 
@@ -131,7 +131,7 @@ export const createEupagoMultibancoPayment = async (
     const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
       method: 'POST',
       headers: {
-        'Authorization': `ApiKey ${apiKey}`,
+        'Authorization': 'ApiKey da58-5a0d-2f22-0152-8f6d',
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
