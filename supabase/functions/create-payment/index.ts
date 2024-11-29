@@ -25,47 +25,71 @@ serve(async (req) => {
 
   try {
     const { orderId, paymentMethod } = await req.json()
+    console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
     // Get order details from database
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('*')
+      .select('*, students(name, phone)')
       .eq('id', orderId)
       .single()
 
-    if (orderError) throw new Error('Order not found')
+    if (orderError) {
+      console.error('Error fetching order:', orderError)
+      throw new Error('Order not found')
+    }
 
+    console.log('Order details:', order)
     let paymentResponse
 
     if (paymentMethod === 'mbway' || paymentMethod === 'multibanco') {
       // EuPago integration
-      const response = await fetch('https://sandbox.eupago.pt/api/v1.02/payment', {
+      const eupagoMethod = paymentMethod === 'mbway' ? 'mb_way' : 'multibanco'
+      console.log(`Making EuPago request for ${eupagoMethod}`)
+
+      const response = await fetch('https://sandbox.eupago.pt/clientes/rest_api/pagamento/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `ApiKey ${EUPAGO_API_KEY}`,
         },
         body: JSON.stringify({
-          payment_method: paymentMethod,
-          amount: order.total_amount,
-          currency: 'EUR',
-          reference: orderId,
-          ...(paymentMethod === 'mbway' ? { phone: order.shipping_phone } : {}),
+          payment_method: eupagoMethod,
+          valor: order.total_amount,
+          chave: EUPAGO_API_KEY,
+          id: orderId,
+          ...(paymentMethod === 'mbway' ? { 
+            alias: order.shipping_phone,
+            cliente: order.shipping_name
+          } : {})
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('EuPago error:', errorText)
+        throw new Error(`EuPago error: ${errorText}`)
+      }
+
       paymentResponse = await response.json()
+      console.log('EuPago response:', paymentResponse)
 
       // Update order with payment details
-      await supabase
+      const { error: updateError } = await supabase
         .from('orders')
         .update({
-          payment_id: paymentResponse.id,
+          payment_id: paymentResponse.referencia,
           payment_status: 'pending',
         })
         .eq('id', orderId)
 
+      if (updateError) {
+        console.error('Error updating order:', updateError)
+        throw new Error('Failed to update order with payment details')
+      }
+
     } else if (paymentMethod === 'card') {
+      console.log('Creating Stripe session')
       // Stripe integration
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -74,6 +98,7 @@ serve(async (req) => {
             currency: 'eur',
             product_data: {
               name: `Order ${orderId}`,
+              description: `Order for ${order.shipping_name}`,
             },
             unit_amount: Math.round(order.total_amount * 100), // Convert to cents
           },
@@ -84,19 +109,27 @@ serve(async (req) => {
         cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
       })
 
+      console.log('Stripe session created:', session.id)
       paymentResponse = { 
         sessionId: session.id,
         url: session.url 
       }
 
       // Update order with payment details
-      await supabase
+      const { error: updateError } = await supabase
         .from('orders')
         .update({
           payment_id: session.id,
           payment_status: 'pending',
         })
         .eq('id', orderId)
+
+      if (updateError) {
+        console.error('Error updating order:', updateError)
+        throw new Error('Failed to update order with payment details')
+      }
+    } else {
+      throw new Error(`Invalid payment method: ${paymentMethod}`)
     }
 
     return new Response(
@@ -110,6 +143,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Payment processing error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
