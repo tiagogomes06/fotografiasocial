@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const FROM_EMAIL = 'envio@fotografiaescolar.duploefeito.com'
-const ADMIN_EMAIL = 'gomes@duploefeito.com'
+const ADMIN_EMAIL = 'eu@tiagogomes.pt'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
