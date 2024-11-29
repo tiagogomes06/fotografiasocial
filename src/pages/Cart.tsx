@@ -18,10 +18,17 @@ const Cart = () => {
   };
 
   const startCheckout = () => {
-    if (!cart[0]?.studentId) {
-      toast.error("Erro: Carrinho inválido. Por favor, volte à loja e adicione os itens novamente.");
+    if (!cart || cart.length === 0) {
+      toast.error("O carrinho está vazio");
       return;
     }
+
+    if (!cart[0]?.studentId) {
+      toast.error("Erro: Carrinho inválido. Por favor, volte à loja e adicione os itens novamente.");
+      navigate('/store');
+      return;
+    }
+
     setIsCheckingOut(true);
   };
 

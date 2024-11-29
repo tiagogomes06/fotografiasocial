@@ -53,13 +53,18 @@ const Store = () => {
   };
 
   const addToCart = () => {
+    if (!studentId) {
+      toast.error("Erro: ID do estudante não encontrado. Por favor, volte à página inicial.");
+      return;
+    }
+
     const newItems = selectedPhotos
       .filter(photo => productSelections[photo])
       .map(photo => {
         const product = products.find(p => p.id === productSelections[photo]);
         return {
           photoUrl: photo,
-          photoId: photo, // Using the URL as the photo ID for now
+          photoId: photo,
           productId: productSelections[photo],
           studentId: studentId,
           price: product?.price || 0
@@ -73,6 +78,10 @@ const Store = () => {
   };
 
   const goToCart = () => {
+    if (cart.length === 0) {
+      toast.error("O carrinho está vazio");
+      return;
+    }
     navigate('/cart', { state: { cart, products } });
   };
 
