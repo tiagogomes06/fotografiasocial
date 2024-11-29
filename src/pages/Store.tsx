@@ -11,7 +11,7 @@ import { CartItem, Product } from "@/types/admin";
 const Store = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { photos, studentName } = location.state || { photos: [], studentName: "" };
+  const { photos, studentId } = location.state || { photos: [], studentId: "" };
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [productSelections, setProductSelections] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -59,7 +59,9 @@ const Store = () => {
         const product = products.find(p => p.id === productSelections[photo]);
         return {
           photoUrl: photo,
+          photoId: photo, // Using the URL as the photo ID for now
           productId: productSelections[photo],
+          studentId: studentId,
           price: product?.price || 0
         };
       });

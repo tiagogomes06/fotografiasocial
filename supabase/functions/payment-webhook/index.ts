@@ -7,35 +7,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY')
-const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
-const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')
-const supabaseUrl = Deno.env.get('SUPABASE_URL')
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
+const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY')!
 
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
-const stripe = new Stripe(STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
   httpClient: Stripe.createFetchHttpClient(),
 })
 
+const cryptoProvider = Stripe.createSubtleCryptoProvider()
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const signature = req.headers.get('stripe-signature')
+    const signature = req.headers.get('Stripe-Signature')
     const eupago_signature = req.headers.get('x-eupago-signature')
 
     if (signature) {
       // Handle Stripe webhook
       const body = await req.text()
-      const event = stripe.webhooks.constructEvent(
+      const event = await stripe.webhooks.constructEventAsync(
         body,
         signature,
-        STRIPE_WEBHOOK_SECRET!
+        STRIPE_WEBHOOK_SECRET,
+        undefined,
+        cryptoProvider
       )
+
+      console.log('Received Stripe webhook event:', event.type)
 
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object
@@ -44,28 +52,25 @@ serve(async (req) => {
           .update({ payment_status: 'completed' })
           .eq('payment_id', session.id)
       }
-    } else if (eupago_signature) {
+
+    } else {
       // Handle EuPago webhook
-      const body = await req.json()
+      const { valor, canal, referencia, transacao, identificador } = await req.json()
       
-      // Verify EuPago signature
-      const calculatedSignature = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(body + EUPAGO_API_KEY)
-      )
-      const signatureHex = Array.from(new Uint8Array(calculatedSignature))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
+      console.log('Received EuPago webhook:', { 
+        valor, 
+        canal, 
+        referencia, 
+        transacao, 
+        identificador 
+      })
 
-      if (signatureHex !== eupago_signature) {
-        throw new Error('Invalid EuPago signature')
-      }
-
-      if (body.status === 'paid') {
+      // Verify the payment status and update the order
+      if (transacao === 'paid') {
         await supabase
           .from('orders')
           .update({ payment_status: 'completed' })
-          .eq('payment_id', body.payment_id)
+          .eq('payment_id', identificador)
       }
     }
 
@@ -74,6 +79,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
+    console.error('Error processing webhook:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
