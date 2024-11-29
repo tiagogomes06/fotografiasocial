@@ -24,8 +24,8 @@ const Cart = () => {
     }
 
     if (!cart[0]?.studentId) {
-      toast.error("Erro: Carrinho inválido. Por favor, volte à loja e adicione os itens novamente.");
-      navigate('/store');
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/');
       return;
     }
 

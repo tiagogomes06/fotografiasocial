@@ -54,7 +54,8 @@ const Store = () => {
 
   const addToCart = () => {
     if (!studentId) {
-      toast.error("Erro: ID do estudante não encontrado. Por favor, volte à página inicial.");
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/');
       return;
     }
 
