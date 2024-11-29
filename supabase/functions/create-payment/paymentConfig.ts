@@ -5,7 +5,6 @@ export const corsHeaders = {
 
 export interface PaymentConfig {
   stripeKey: string;
-  eupagoKey: string;
 }
 
 export const getConfig = (): PaymentConfig => {
@@ -14,11 +13,7 @@ export const getConfig = (): PaymentConfig => {
     throw new Error('STRIPE_SECRET_KEY environment variable is not set');
   }
 
-  // Using hardcoded EuPago key as previously established
-  const eupagoKey = 'da58-5a0d-2f22-0152-8f6d';
-
   return {
     stripeKey,
-    eupagoKey,
   };
 };

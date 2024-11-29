@@ -11,42 +11,14 @@ serve(async (req) => {
   }
 
   try {
-    // Check for required environment variables first
-    const requiredEnvVars = [
-      'SUPABASE_URL',
-      'SUPABASE_SERVICE_ROLE_KEY',
-      'STRIPE_SECRET_KEY'
-    ];
-
-    const missingEnvVars = requiredEnvVars.filter(varName => !Deno.env.get(varName));
-    
-    if (missingEnvVars.length > 0) {
-      console.error('Missing environment variables:', missingEnvVars);
-      return new Response(
-        JSON.stringify({ 
-          error: `Missing required environment variables: ${missingEnvVars.join(', ')}` 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const config = getConfig()
-
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    const stripe = new Stripe(config.stripeKey, {
-      apiVersion: '2022-11-15',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
-
     const { orderId, paymentMethod, email, name } = await req.json()
     console.log(`Processing payment for order ${orderId} with method ${paymentMethod}`)
 
     // First verify the order exists
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
     const { data: orderExists, error: orderExistsError } = await supabase
       .from('orders')
       .select('id')
@@ -98,6 +70,11 @@ serve(async (req) => {
     try {
       switch (paymentMethod) {
         case 'card':
+          const config = getConfig()
+          const stripe = new Stripe(config.stripeKey, {
+            apiVersion: '2022-11-15',
+            httpClient: Stripe.createFetchHttpClient(),
+          })
           paymentResponse = await createStripePayment(stripe, order, req.headers.get('origin') || '')
           break
 
@@ -105,12 +82,15 @@ serve(async (req) => {
           paymentResponse = await createEupagoMBWayPayment(
             order,
             req.headers.get('origin') || '',
-            config.eupagoKey
+            'da58-5a0d-2f22-0152-8f6d' // Hardcoded EuPago key
           )
           break
 
         case 'multibanco':
-          paymentResponse = await createEupagoMultibancoPayment(order, config.eupagoKey)
+          paymentResponse = await createEupagoMultibancoPayment(
+            order, 
+            'da58-5a0d-2f22-0152-8f6d' // Hardcoded EuPago key
+          )
           break
 
         default:
