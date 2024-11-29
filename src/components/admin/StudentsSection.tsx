@@ -1,4 +1,4 @@
-import { Class, Student } from "@/types/admin";
+import { Class } from "@/types/admin";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import StudentActions from "@/components/StudentActions";
+import { useState } from "react";
 
 interface StudentsSectionProps {
   selectedClass: Class;
@@ -16,11 +17,18 @@ interface StudentsSectionProps {
 }
 
 export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUploaded }: StudentsSectionProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const studentForm = useForm({
     defaultValues: {
       studentName: "",
     },
   });
+
+  const handleSubmit = (values: { studentName: string }) => {
+    onAddStudent(values);
+    setIsOpen(false);
+    studentForm.reset();
+  };
 
   return (
     <section className="space-y-6">
@@ -32,7 +40,7 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
           <Button variant="outline" onClick={onBack}>
             Back to Classes
           </Button>
-          <Dialog>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -44,7 +52,7 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
                 <DialogTitle>Add New Student</DialogTitle>
               </DialogHeader>
               <Form {...studentForm}>
-                <form onSubmit={studentForm.handleSubmit(onAddStudent)} className="space-y-4">
+                <form onSubmit={studentForm.handleSubmit(handleSubmit)} className="space-y-4">
                   <FormField
                     control={studentForm.control}
                     name="studentName"

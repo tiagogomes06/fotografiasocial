@@ -6,6 +6,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Plus, Users, School as SchoolIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 
 interface SchoolsSectionProps {
   schools: School[];
@@ -14,11 +15,18 @@ interface SchoolsSectionProps {
 }
 
 export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: SchoolsSectionProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const schoolForm = useForm({
     defaultValues: {
       schoolName: "",
     },
   });
+
+  const handleSubmit = (values: { schoolName: string }) => {
+    onAddSchool(values);
+    setIsOpen(false);
+    schoolForm.reset();
+  };
 
   return (
     <section className="space-y-6">
@@ -27,7 +35,7 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
           <SchoolIcon className="h-8 w-8" />
           Schools
         </h2>
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -39,7 +47,7 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
               <DialogTitle>Add New School</DialogTitle>
             </DialogHeader>
             <Form {...schoolForm}>
-              <form onSubmit={schoolForm.handleSubmit(onAddSchool)} className="space-y-4">
+              <form onSubmit={schoolForm.handleSubmit(handleSubmit)} className="space-y-4">
                 <FormField
                   control={schoolForm.control}
                   name="schoolName"

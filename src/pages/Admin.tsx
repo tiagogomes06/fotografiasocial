@@ -27,7 +27,6 @@ const Admin = () => {
         schema: 'public', 
         table: 'schools' 
       }, async () => {
-        await queryClient.invalidateQueries({ queryKey: ['schools'] });
         const updatedData = await fetchSchools();
         queryClient.setQueryData(['schools'], updatedData);
       })
@@ -36,7 +35,6 @@ const Admin = () => {
         schema: 'public', 
         table: 'classes' 
       }, async () => {
-        await queryClient.invalidateQueries({ queryKey: ['schools'] });
         const updatedData = await fetchSchools();
         queryClient.setQueryData(['schools'], updatedData);
       })
@@ -45,7 +43,6 @@ const Admin = () => {
         schema: 'public', 
         table: 'students' 
       }, async () => {
-        await queryClient.invalidateQueries({ queryKey: ['schools'] });
         const updatedData = await fetchSchools();
         queryClient.setQueryData(['schools'], updatedData);
       })
@@ -54,33 +51,22 @@ const Admin = () => {
         schema: 'public', 
         table: 'photos' 
       }, async () => {
-        await queryClient.invalidateQueries({ queryKey: ['schools'] });
         const updatedData = await fetchSchools();
         queryClient.setQueryData(['schools'], updatedData);
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Subscribed to all table changes');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Failed to subscribe to changes');
-          toast.error('Failed to subscribe to real-time updates');
-        }
-      });
+      .subscribe();
 
     return () => {
       channel.unsubscribe();
     };
   }, [queryClient]);
 
-  const generateAccessCode = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  };
-
   const schoolMutation = useMutation({
     mutationFn: (values: { schoolName: string }) => createSchool(values.schoolName),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("School added successfully");
+      const updatedData = await fetchSchools();
+      queryClient.setQueryData(['schools'], updatedData);
     },
     onError: (error) => {
       toast.error("Failed to add school");
@@ -93,8 +79,10 @@ const Admin = () => {
       if (!selectedSchool) throw new Error("No school selected");
       return createClass(values.className, selectedSchool.id);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Class added successfully");
+      const updatedData = await fetchSchools();
+      queryClient.setQueryData(['schools'], updatedData);
     },
     onError: (error) => {
       toast.error("Failed to add class");
@@ -108,8 +96,10 @@ const Admin = () => {
       const accessCode = generateAccessCode();
       return createStudent(values.studentName, selectedClass.id, accessCode);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Student added successfully");
+      const updatedData = await fetchSchools();
+      queryClient.setQueryData(['schools'], updatedData);
     },
     onError: (error) => {
       toast.error("Failed to add student");
@@ -117,8 +107,13 @@ const Admin = () => {
     },
   });
 
+  const generateAccessCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+
   const handlePhotoUploaded = async (studentId: string, photoUrl: string) => {
-    queryClient.invalidateQueries({ queryKey: ['schools'] });
+    const updatedData = await fetchSchools();
+    queryClient.setQueryData(['schools'], updatedData);
   };
 
   if (isLoading) {

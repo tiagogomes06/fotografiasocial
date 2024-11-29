@@ -42,7 +42,6 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
         toast.success(`Photo ${file.name} uploaded successfully`);
       }
 
-      // Close the modal after all uploads are complete
       setIsOpen(false);
     } catch (error) {
       toast.error('Failed to upload photos');
