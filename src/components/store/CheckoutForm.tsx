@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import ShippingForm from "./ShippingForm";
 import PaymentMethodSelect from "./PaymentMethodSelect";
+import { ensurePhotosExist, createOrder, createOrderItems, processPayment } from "@/utils/orderUtils";
 
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
@@ -53,31 +54,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     method => method.id === shippingMethod
   )?.type === "pickup";
 
-  const ensurePhotosExist = async () => {
-    for (const item of cart) {
-      const { data: existingPhoto } = await supabase
-        .from("photos")
-        .select("id")
-        .eq("id", item.photoId)
-        .single();
-
-      if (!existingPhoto) {
-        // Create the photo if it doesn't exist
-        const { error: createError } = await supabase
-          .from("photos")
-          .insert({
-            id: item.photoId,
-            url: item.photoUrl,
-            student_id: item.studentId
-          });
-
-        if (createError) {
-          throw new Error(`Failed to create photo: ${createError.message}`);
-        }
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -105,60 +81,24 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       setIsProcessing(true);
       toast.info("A processar o seu pedido...");
 
-      // Ensure all photos exist in the database
-      await ensurePhotosExist();
+      await ensurePhotosExist(cart);
 
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          student_id: cart[0].studentId,
-          total_amount: cart.reduce((sum, item) => sum + item.price, 0),
-          shipping_method_id: shippingMethod,
-          shipping_address: formData.address,
-          shipping_city: formData.city,
-          shipping_postal_code: formData.postalCode,
-          shipping_name: formData.name,
-          shipping_phone: formData.phone,
-          email: formData.email,
-          payment_method: paymentMethod,
-        })
-        .select()
-        .single();
+      const order = await createOrder(
+        cart,
+        cart[0].studentId,
+        shippingMethod,
+        formData,
+        paymentMethod
+      );
 
-      if (orderError) {
-        toast.error(`Erro ao criar pedido: ${orderError.message}`);
-        throw orderError;
-      }
+      await createOrderItems(cart, order.id);
 
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        photo_id: item.photoId,
-        product_id: item.productId,
-        price_at_time: item.price,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        toast.error(`Erro ao adicionar itens ao pedido: ${itemsError.message}`);
-        throw itemsError;
-      }
-
-      const { data: payment, error: paymentError } = await supabase.functions.invoke("create-payment", {
-        body: { 
-          orderId: order.id, 
-          paymentMethod,
-          email: formData.email,
-          name: formData.name,
-        },
-      });
-
-      if (paymentError) {
-        toast.error(`Erro ao processar pagamento: ${paymentError.message}`);
-        throw paymentError;
-      }
+      const payment = await processPayment(
+        order.id,
+        paymentMethod,
+        formData.email,
+        formData.name
+      );
 
       if (paymentMethod === "card") {
         toast.success("Redirecionando para página de pagamento...");
