@@ -1,116 +1,138 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createEmailTemplate, type OrderDetails } from './emailTemplates.ts'
-import { createSMTPClient } from './smtpClient.ts'
+import { createEmailTemplate } from './emailTemplates.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface EmailRequest {
-  orderId: string;
-  type: 'created' | 'paid';
-}
-
-const getOrderDetails = async (supabase: any, orderId: string) => {
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
-    .select(`
-      *,
-      shipping_methods (
-        name,
-        price
-      ),
-      order_items (
-        quantity,
-        price_at_time,
-        products (
-          name
-        ),
-        photos (
-          url
-        )
-      )
-    `)
-    .eq('id', orderId)
-    .single();
-
-  if (orderError) throw orderError;
-  return order as OrderDetails;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const client = createSMTPClient();
-
-    const { orderId, type } = await req.json() as EmailRequest;
-
-    // Initialize Supabase client
+    console.log('Starting order email process...');
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase configuration');
+      throw new Error('Server configuration error');
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log(`Processing email for order ${orderId} (${type})`);
+    const { orderId, type } = await req.json();
+    console.log(`Processing ${type} email for order: ${orderId}`);
 
-    // Get order details
-    const order = await getOrderDetails(supabase, orderId);
+    // Fetch order details with all related information
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        shipping_methods (
+          name,
+          price
+        ),
+        order_items (
+          quantity,
+          price_at_time,
+          products (
+            name
+          ),
+          photos (
+            url
+          )
+        )
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (orderError) {
+      console.error('Error fetching order:', orderError);
+      throw orderError;
+    }
+
     if (!order) {
+      console.error('Order not found:', orderId);
       throw new Error('Order not found');
     }
 
-    // Generate customer email content
-    const customerHtml = createEmailTemplate(order, type);
-    const subject = type === 'created' ? 
-      `Nova Encomenda #${orderId}` : 
-      `Pagamento Confirmado - Encomenda #${orderId}`;
+    console.log('Order details retrieved:', order);
+
+    // Generate email content
+    const html = createEmailTemplate(order, type);
 
     // Send email to customer
     if (order.email) {
-      console.log(`Sending ${type} email to customer: ${order.email}`);
-      await client.send({
-        from: "envio@fotografiaescolar.duploefeito.com",
-        to: order.email,
-        subject: subject,
-        html: customerHtml,
+      console.log(`Sending ${type} email to customer:`, order.email);
+      
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: { 
+          to: order.email,
+          subject: type === 'created' ? 
+            `Confirmação de Encomenda #${orderId}` : 
+            `Pagamento Confirmado - Encomenda #${orderId}`,
+          html: html
+        }
       });
+
+      if (emailError) {
+        console.error('Error sending customer email:', emailError);
+        throw emailError;
+      }
+    } else {
+      console.warn('No customer email address found for order:', orderId);
     }
 
-    // If payment is completed, send notification to admin
+    // Send notification to admin for completed payments
     if (type === 'paid') {
-      console.log('Sending payment notification to admin');
+      console.log('Sending admin notification for paid order');
+      
       const adminHtml = createEmailTemplate(order, type, true);
-      await client.send({
-        from: "envio@fotografiaescolar.duploefeito.com",
-        to: "envio@fotografiaescolar.duploefeito.com",
-        subject: `[ADMIN] Pagamento Recebido - Encomenda #${orderId}`,
-        html: adminHtml,
+      const { error: adminEmailError } = await supabase.functions.invoke('send-email', {
+        body: { 
+          to: "envio@fotografiaescolar.duploefeito.com",
+          subject: `[ADMIN] Novo Pagamento - Encomenda #${orderId}`,
+          html: adminHtml
+        }
       });
+
+      if (adminEmailError) {
+        console.error('Error sending admin email:', adminEmailError);
+        throw adminEmailError;
+      }
     }
-
-    await client.close();
-
-    console.log(`Email(s) sent successfully for order ${orderId} (${type})`);
 
     return new Response(
       JSON.stringify({ success: true }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       },
-    );
+    )
 
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Detailed error in send-order-email:', error);
+    console.error('Error stack trace:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        details: 'Check Edge Function logs for more information'
+      }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       },
-    );
+    )
   }
-});
+})

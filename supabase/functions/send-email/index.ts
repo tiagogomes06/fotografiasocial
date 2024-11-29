@@ -13,6 +13,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting email send process...');
+    
+    const smtpPassword = Deno.env.get('SMTP_PASSWORD');
+    if (!smtpPassword) {
+      console.error('SMTP_PASSWORD environment variable is not set');
+      throw new Error('SMTP configuration error');
+    }
+
     const client = new SMTPClient({
       connection: {
         hostname: "fotografiaescolar.duploefeito.com",
@@ -20,14 +28,14 @@ serve(async (req) => {
         tls: true,
         auth: {
           username: "envio@fotografiaescolar.duploefeito.com",
-          password: Deno.env.get('SMTP_PASSWORD'),
+          password: smtpPassword,
         },
       },
     });
 
     const { to, subject, html } = await req.json()
-
-    console.log(`Sending email to ${to} with subject: ${subject}`)
+    
+    console.log(`Attempting to send email to ${to} with subject: ${subject}`);
 
     const send = await client.send({
       from: "envio@fotografiaescolar.duploefeito.com",
@@ -36,7 +44,7 @@ serve(async (req) => {
       html: html,
     });
 
-    console.log("Email sent successfully:", send)
+    console.log("Email sent successfully:", send);
     
     await client.close();
 
@@ -51,9 +59,14 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error("Error sending email:", error)
+    console.error("Detailed error sending email:", error);
+    console.error("Error stack trace:", error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        details: 'Check Edge Function logs for more information'
+      }),
       { 
         status: 500,
         headers: { 
