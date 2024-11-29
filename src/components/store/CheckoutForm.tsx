@@ -28,6 +28,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     address: "",
     postalCode: "",
     city: "",
@@ -60,6 +61,11 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       return;
     }
 
+    if (!formData.email) {
+      toast.error("Por favor preencha o email");
+      return;
+    }
+
     if (!isPickupMethod && (!formData.address || !formData.postalCode || !formData.city)) {
       toast.error("Por favor preencha todos os campos de envio");
       return;
@@ -85,6 +91,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
           shipping_postal_code: formData.postalCode,
           shipping_name: formData.name,
           shipping_phone: formData.phone,
+          email: formData.email,
           payment_method: paymentMethod,
         })
         .select()
@@ -106,7 +113,12 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       if (itemsError) throw itemsError;
 
       const { data: payment } = await supabase.functions.invoke("create-payment", {
-        body: { orderId: order.id, paymentMethod },
+        body: { 
+          orderId: order.id, 
+          paymentMethod,
+          email: formData.email,
+          name: formData.name,
+        },
       });
 
       if (paymentMethod === "card") {

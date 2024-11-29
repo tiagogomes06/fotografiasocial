@@ -12,6 +12,7 @@ interface ShippingFormProps {
   formData: {
     name: string;
     phone: string;
+    email: string;
     address: string;
     postalCode: string;
     city: string;
@@ -47,6 +48,17 @@ const ShippingForm = ({
         </div>
         
         <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+          />
+        </div>
+
+        <div>
           <Label htmlFor="phone">Telefone</Label>
           <Input
             id="phone"
@@ -80,6 +92,7 @@ const ShippingForm = ({
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                required={!isPickupMethod}
               />
             </div>
 
@@ -89,6 +102,7 @@ const ShippingForm = ({
                 id="postalCode"
                 value={formData.postalCode}
                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                required={!isPickupMethod}
               />
             </div>
 
@@ -98,6 +112,7 @@ const ShippingForm = ({
                 id="city"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                required={!isPickupMethod}
               />
             </div>
           </>
