@@ -65,13 +65,19 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       return;
     }
 
+    // Check if we have a valid studentId from the cart
+    if (!cart[0]?.studentId) {
+      toast.error("Erro ao processar o pedido: ID do estudante não encontrado");
+      return;
+    }
+
     try {
       setIsProcessing(true);
 
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          student_id: cart[0]?.studentId,
+          student_id: cart[0].studentId,
           total_amount: cart.reduce((sum, item) => sum + item.price, 0),
           shipping_method_id: shippingMethod,
           shipping_address: formData.address,
