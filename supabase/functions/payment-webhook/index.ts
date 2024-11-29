@@ -1,32 +1,29 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')!
-const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
-const EUPAGO_API_KEY = Deno.env.get('EUPAGO_API_KEY')!
-
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2022-11-15',
-  httpClient: Stripe.createFetchHttpClient(),
-})
-
-const cryptoProvider = Stripe.createSubtleCryptoProvider()
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-async function updateOrderStatus(orderId: string, status: string) {
-  console.log(`Updating order ${orderId} status to ${status}`);
+async function updateOrderStatus(orderId: string, status: string, transactionId?: string) {
+  console.log(`Updating order ${orderId} status to ${status}, transaction: ${transactionId}`);
+  
+  const updateData: any = { 
+    payment_status: status 
+  };
+  
+  if (transactionId) {
+    updateData.payment_id = transactionId;
+  }
+
   const { error } = await supabase
     .from('orders')
-    .update({ payment_status: status })
+    .update(updateData)
     .eq('id', orderId);
 
   if (error) {
@@ -49,53 +46,42 @@ async function updateOrderStatus(orderId: string, status: string) {
   }
 }
 
-async function handleStripeWebhook(signature: string, body: string) {
-  console.log('Processing Stripe webhook');
-  const event = await stripe.webhooks.constructEventAsync(
-    body,
-    signature,
-    STRIPE_WEBHOOK_SECRET,
-    undefined,
-    cryptoProvider
-  );
-
-  console.log('Stripe event type:', event.type);
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    await updateOrderStatus(session.metadata.order_id, 'completed');
-  } else if (event.type === 'payment_intent.payment_failed') {
-    const session = event.data.object;
-    await updateOrderStatus(session.metadata.order_id, 'failed');
-  }
-
-  return { ok: true };
-}
-
 async function handleEuPagoWebhook(payload: any) {
   console.log('Processing EuPago webhook:', payload);
-  const { identifier, status } = payload;
+  
+  // Extract relevant information from the webhook payload
+  const identifier = payload.identificador || payload.referencia;
+  const transactionId = payload.transacao;
+  const status = payload.estado?.toLowerCase();
 
   if (!identifier) {
     throw new Error('No order identifier in EuPago webhook');
   }
 
+  console.log(`Processing payment for order ${identifier}, transaction ${transactionId}, status ${status}`);
+
   let paymentStatus;
   switch (status) {
+    case 'pago':
     case 'paid':
+    case 'completed':
       paymentStatus = 'completed';
       break;
-    case 'failed':
-      paymentStatus = 'failed';
-      break;
     case 'pending':
+    case 'pendente':
       paymentStatus = 'pending';
       break;
-    default:
+    case 'failed':
+    case 'falhou':
+    case 'erro':
       paymentStatus = 'failed';
+      break;
+    default:
+      console.warn(`Unknown payment status: ${status}`);
+      paymentStatus = 'pending';
   }
 
-  await updateOrderStatus(identifier, paymentStatus);
+  await updateOrderStatus(identifier, paymentStatus, transactionId);
   return { ok: true };
 }
 
@@ -106,18 +92,10 @@ serve(async (req) => {
 
   try {
     const body = await req.text();
-    const signature = req.headers.get('Stripe-Signature');
-    const eupagoSignature = req.headers.get('x-eupago-signature');
-
-    let result;
-    if (signature) {
-      result = await handleStripeWebhook(signature, body);
-    } else if (eupagoSignature) {
-      const payload = JSON.parse(body);
-      result = await handleEuPagoWebhook(payload);
-    } else {
-      throw new Error('Invalid webhook signature');
-    }
+    console.log('Received webhook body:', body);
+    
+    const payload = JSON.parse(body);
+    const result = await handleEuPagoWebhook(payload);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -127,7 +105,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
