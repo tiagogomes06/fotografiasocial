@@ -33,6 +33,20 @@ async function updateOrderStatus(orderId: string, status: string) {
     console.error('Error updating order status:', error);
     throw error;
   }
+
+  // Send payment confirmation email
+  if (status === 'completed') {
+    const { error: emailError } = await supabase.functions.invoke('send-order-email', {
+      body: { 
+        orderId,
+        type: 'paid'
+      }
+    });
+
+    if (emailError) {
+      console.error('Error sending payment confirmation email:', emailError);
+    }
+  }
 }
 
 async function handleStripeWebhook(signature: string, body: string) {

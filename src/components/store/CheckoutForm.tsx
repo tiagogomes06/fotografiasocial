@@ -93,6 +93,19 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       await createOrderItems(cart, order.id);
 
+      // Send order creation email
+      const { error: emailError } = await supabase.functions.invoke('send-order-email', {
+        body: { 
+          orderId: order.id,
+          type: 'created'
+        }
+      });
+
+      if (emailError) {
+        console.error('Error sending order email:', emailError);
+        toast.error('Erro ao enviar email de confirmação');
+      }
+
       // Add a longer delay (2 seconds) before processing payment
       await new Promise(resolve => setTimeout(resolve, 2000));
 
