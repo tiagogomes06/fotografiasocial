@@ -46,11 +46,12 @@ const PhotoCard = ({
             <Select
               value={selectedProduct}
               onValueChange={onProductSelect}
-              onOpenChange={(e) => e.stopPropagation()}
             >
               <SelectTrigger 
                 className="w-full"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               >
                 <SelectValue placeholder="Select a product" />
               </SelectTrigger>
