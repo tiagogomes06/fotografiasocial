@@ -156,6 +156,24 @@ export type Database = {
           },
         ]
       }
+      payment_status_descriptions: {
+        Row: {
+          created_at: string
+          description: string
+          status: Database["public"]["Enums"]["payment_status_type"]
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          status: Database["public"]["Enums"]["payment_status_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          status?: Database["public"]["Enums"]["payment_status_type"]
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
           created_at: string
@@ -294,7 +312,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      payment_status_type:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
