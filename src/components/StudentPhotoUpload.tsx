@@ -31,7 +31,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         if (!file.type.startsWith('image/')) {
-          toast.error(`File ${file.name} is not an image`);
+          toast.error(`O ficheiro ${file.name} não é uma imagem`);
           continue;
         }
 
@@ -39,12 +39,12 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
         await onPhotoUploaded(photo.url);
         completedFiles++;
         setUploadProgress((completedFiles / totalFiles) * 100);
-        toast.success(`Photo ${file.name} uploaded successfully`);
+        toast.success(`Fotografia ${file.name} carregada com sucesso`);
       }
 
       setIsOpen(false);
     } catch (error) {
-      toast.error('Failed to upload photos');
+      toast.error('Falha ao carregar fotografias');
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -57,12 +57,12 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Upload className="h-4 w-4 mr-1" />
-          Upload Photos
+          Carregar Fotografias
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Upload Photos for {studentName}</DialogTitle>
+          <DialogTitle>Carregar Fotografias para {studentName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <input
@@ -77,12 +77,12 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
             <div className="space-y-2">
               <Progress value={uploadProgress} />
               <p className="text-sm text-muted-foreground text-center">
-                Uploading... {Math.round(uploadProgress)}%
+                A carregar... {Math.round(uploadProgress)}%
               </p>
             </div>
           )}
           <p className="text-sm text-muted-foreground">
-            Supported formats: JPG, PNG, GIF. You can select multiple photos.
+            Formatos suportados: JPG, PNG, GIF. Pode selecionar várias fotografias.
           </p>
         </div>
       </DialogContent>
