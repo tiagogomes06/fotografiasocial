@@ -11,19 +11,19 @@ const PaymentMethodSelect = ({ paymentMethod, setPaymentMethod }: PaymentMethodS
     {
       id: "mbway",
       name: "MBWay",
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=800&auto=format&fit=crop&q=60",
+      image: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Logo_MBWay.svg",
       description: "Pagamento instantâneo através do seu telemóvel"
     },
     {
       id: "multibanco",
       name: "Multibanco",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&auto=format&fit=crop&q=60",
+      image: "https://i0.wp.com/contaonline.pt/wp-content/uploads/2022/06/Empresas-de-sucesso-controlo-de-tesouraria-multibanco-contaonline.png",
       description: "Pagamento por referência multibanco"
     },
     {
       id: "card",
       name: "Cartão de Crédito",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=60",
+      image: "https://madduckjewels.com/wp-content/uploads/2019/09/Visa-MasterCard-300x175-300x175.png",
       description: "Pagamento seguro com cartão de crédito"
     }
   ];
@@ -47,7 +47,7 @@ const PaymentMethodSelect = ({ paymentMethod, setPaymentMethod }: PaymentMethodS
             <img 
               src={method.image} 
               alt={method.name}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="absolute inset-0 w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-110"
             />
             <div className="absolute inset-0 z-20 p-4 flex flex-col justify-end text-white">
               <h3 className="text-lg font-semibold">{method.name}</h3>
