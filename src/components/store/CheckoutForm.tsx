@@ -56,9 +56,11 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     },
   });
 
-  const isPickupMethod = shippingMethod && shippingMethods.find(
+  const selectedShippingMethod = shippingMethods.find(
     method => method.id === shippingMethod
-  )?.type === "pickup";
+  );
+
+  const isPickupMethod = selectedShippingMethod?.type === "pickup";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,8 +101,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
 
       await createOrderItems(cart, order.id);
 
-      const selectedShippingMethod = shippingMethods.find(method => method.id === shippingMethod);
-
       const payment = await processPayment(
         order.id,
         paymentMethod,
@@ -113,6 +113,9 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         window.location.href = payment.url;
       } else {
         toast.success("Pedido criado com sucesso!");
+        
+        const shippingCost = selectedShippingMethod?.price || 0;
+        const subtotal = order.total_amount - shippingCost;
         
         if (paymentMethod === "mbway") {
           if (payment.error) {
@@ -131,7 +134,9 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
                   email: formData.email,
                   phone: formData.phone,
                   shippingMethod: selectedShippingMethod?.name,
-                  total: order.total_amount
+                  total: order.total_amount,
+                  shippingCost,
+                  subtotal
                 }
               }
             });
@@ -147,7 +152,9 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
                 paymentDetails: {
                   entity: payment.entity,
                   reference: payment.reference,
-                  amount: payment.amount
+                  amount: payment.amount,
+                  shippingCost,
+                  subtotal
                 }
               }
             });
