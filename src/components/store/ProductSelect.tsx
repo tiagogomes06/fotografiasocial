@@ -12,36 +12,36 @@ const ProductSelect = ({ selectedProduct, onProductSelect, products }: ProductSe
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Escolha um produto:</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {products.map((product) => (
           <button
             key={product.id}
             onClick={() => onProductSelect(product.id)}
             className={cn(
-              "relative rounded-xl transition-all duration-200 overflow-hidden group",
-              "h-auto aspect-[4/3] p-4",
+              "w-full group relative flex items-center p-4 rounded-lg transition-all duration-200",
+              "bg-gradient-to-r from-purple-500/10 to-indigo-500/10 hover:from-purple-500/20 hover:to-indigo-500/20",
               selectedProduct === product.id 
-                ? "ring-2 ring-purple-500 ring-offset-2" 
-                : "hover:ring-2 hover:ring-purple-300 hover:ring-offset-1"
+                ? "ring-2 ring-purple-500 ring-offset-2 bg-purple-500/20" 
+                : "hover:ring-1 hover:ring-purple-300"
             )}
           >
-            <div 
-              className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10" />
-            <div className="absolute inset-0 z-20 p-4 flex flex-col justify-end">
-              <h3 className="text-base font-bold text-white drop-shadow-lg leading-snug">
+            <div className="flex-1 text-left">
+              <h3 className="font-medium text-gray-900">
                 {product.name}
               </h3>
-              <p className="text-lg font-semibold text-purple-100 mt-1.5 drop-shadow-lg">
+              <p className="text-lg font-semibold text-purple-600 mt-1">
                 {product.price}€
               </p>
             </div>
-            {selectedProduct === product.id && (
-              <div className="absolute top-3 right-3 z-30 bg-white rounded-full p-1.5 shadow-lg">
-                <Check className="w-4 h-4 text-purple-500" />
-              </div>
-            )}
+            
+            <div className={cn(
+              "ml-4 rounded-full p-2 transition-colors",
+              selectedProduct === product.id 
+                ? "bg-purple-500 text-white"
+                : "bg-white/50 text-purple-500"
+            )}>
+              <Check className="w-5 h-5" />
+            </div>
           </button>
         ))}
       </div>
