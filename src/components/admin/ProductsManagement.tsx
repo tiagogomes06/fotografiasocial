@@ -61,12 +61,6 @@ export const ProductsManagement = () => {
 
   const handleEdit = (product: any) => {
     setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      description: product.description || "",
-      price: product.price.toString(),
-      image_url: product.image_url || "",
-    });
     setIsOpen(true);
   };
 
