@@ -6,11 +6,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+async function setupFtpClient(): Promise<Client> {
+  const client = new Client();
+  client.ftp.verbose = true;
+  
+  const host = Deno.env.get("FTP_HOST");
+  const port = Number(Deno.env.get("FTP_PORT"));
+  const user = Deno.env.get("FTP_USER");
+  const password = Deno.env.get("FTP_PASSWORD");
+
+  console.log('FTP Configuration:', { 
+    host, 
+    port,
+    user,
+    hasPassword: !!password
+  });
+
+  await client.access({
+    host: host || "",
+    port: port || 21,
+    user: user || "",
+    password: password || "",
+    secure: false,
+    timeout: 30000, // 30 seconds timeout
+  });
+
+  return client;
+}
+
+async function retryOperation<T>(operation: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error);
+      if (i === retries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+  throw new Error('Operation failed after all retries');
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  let client: Client | null = null;
 
   try {
     console.log('Starting FTP upload process...')
@@ -32,77 +77,51 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i)
     }
 
-    // Setup FTP client
-    const client = new Client()
-    client.ftp.verbose = true
+    client = await retryOperation(async () => {
+      const ftpClient = await setupFtpClient();
+      console.log("Connected to FTP server");
+      return ftpClient;
+    });
 
-    try {
-      const host = Deno.env.get("FTP_HOST")
-      const port = Number(Deno.env.get("FTP_PORT"))
-      const user = Deno.env.get("FTP_USER")
-      const password = Deno.env.get("FTP_PASSWORD")
-
-      console.log('FTP Configuration:', { 
-        host, 
-        port,
-        user,
-        hasPassword: !!password
-      })
-
-      // Connect to FTP server
-      console.log('Connecting to FTP server...')
-      await client.access({
-        host: host || "",
-        port: port || 21,
-        user: user || "",
-        password: password || "",
-      })
-
-      console.log("Connected to FTP server")
-
-      // Ensure /photos directory exists
+    // Ensure /photos directory exists
+    await retryOperation(async () => {
       try {
-        await client.ensureDir("/photos")
+        await client!.ensureDir("/photos");
+        console.log("Photos directory confirmed");
       } catch (error) {
-        console.log('Directory already exists or could not be created:', error)
+        console.log('Directory already exists or could not be created:', error);
       }
+    });
 
-      // Upload file directly from memory
-      console.log('Starting file upload...')
-      await client.uploadFrom(bytes.buffer, `/photos/${fileName}`)
-      console.log("File uploaded successfully")
+    // Upload file
+    await retryOperation(async () => {
+      console.log('Starting file upload...');
+      await client!.uploadFrom(bytes.buffer, `/photos/${fileName}`);
+      console.log("File uploaded successfully");
+    });
 
-      // Construct the public URL
-      const baseUrl = Deno.env.get("FTP_BASE_URL")
-      if (!baseUrl) {
-        throw new Error('FTP_BASE_URL environment variable is not set')
-      }
-      
-      const publicUrl = `${baseUrl}/photos/${fileName}`
-      console.log('Generated public URL:', publicUrl)
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          url: publicUrl
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200 
-        }
-      )
-
-    } catch (ftpError) {
-      console.error('FTP operation failed:', ftpError)
-      throw ftpError
-    } finally {
-      // Clean up
-      console.log('Cleaning up...')
-      client.close()
+    // Construct the public URL
+    const baseUrl = Deno.env.get("FTP_BASE_URL");
+    if (!baseUrl) {
+      throw new Error('FTP_BASE_URL environment variable is not set');
     }
+    
+    const publicUrl = `${baseUrl}/photos/${fileName}`;
+    console.log('Generated public URL:', publicUrl);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        url: publicUrl
+      }),
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200 
+      }
+    );
 
   } catch (error) {
-    console.error('Error in FTP upload:', error)
+    console.error('Error in FTP upload:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -112,6 +131,15 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500 
       }
-    )
+    );
+  } finally {
+    if (client) {
+      try {
+        await client.close();
+        console.log('FTP connection closed');
+      } catch (error) {
+        console.error('Error closing FTP connection:', error);
+      }
+    }
   }
-})
+});
