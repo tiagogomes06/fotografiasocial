@@ -69,34 +69,40 @@ const Store = () => {
     const photoId = extractPhotoId(photoUrl);
     if (!photoId) return null;
 
-    // First try to find the photo
-    const { data: existingPhoto } = await supabase
-      .from("photos")
-      .select("id")
-      .eq("id", photoId)
-      .single();
+    try {
+      // First try to find the photo
+      const { data: existingPhoto, error } = await supabase
+        .from("photos")
+        .select("id")
+        .eq("id", photoId)
+        .maybeSingle();
 
-    if (existingPhoto) {
-      return photoId;
-    }
+      // If photo exists, return its ID
+      if (existingPhoto) {
+        return existingPhoto.id;
+      }
 
-    // If photo doesn't exist, create it
-    const { data: newPhoto, error: createError } = await supabase
-      .from("photos")
-      .insert({
-        id: photoId,
-        url: photoUrl,
-        student_id: studentId
-      })
-      .select()
-      .single();
+      // If photo doesn't exist, create it
+      const { data: newPhoto, error: createError } = await supabase
+        .from("photos")
+        .insert({
+          id: photoId,
+          url: photoUrl,
+          student_id: studentId
+        })
+        .select()
+        .single();
 
-    if (createError) {
-      console.error("Error creating photo:", createError);
+      if (createError) {
+        console.error("Error creating photo:", createError);
+        return null;
+      }
+
+      return newPhoto.id;
+    } catch (error) {
+      console.error("Error processing photo:", error);
       return null;
     }
-
-    return newPhoto.id;
   };
 
   const addToCart = async () => {
