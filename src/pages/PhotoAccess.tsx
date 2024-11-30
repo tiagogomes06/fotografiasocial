@@ -94,68 +94,70 @@ const PhotoAccess = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-purple-50 to-white">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center mb-8"
-      >
-        <img
-          src="https://fotografiaescolar.duploefeito.com/logo.jpg"
-          alt="Duplo Efeito"
-          className="w-32 h-auto mb-4 mx-auto"
-          onError={(e) => {
-            const img = e.target as HTMLImageElement;
-            img.style.display = 'none';
-          }}
-        />
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo(a)!</h1>
-        <p className="text-gray-600 max-w-md mx-auto mb-8">
-          Aceda às suas fotografias escolares usando o código fornecido.
-        </p>
-      </motion.div>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <div className="container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-screen">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <img
+            src="https://fotografiaescolar.duploefeito.com/logo.jpg"
+            alt="Duplo Efeito"
+            className="w-32 h-auto mb-4 mx-auto"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.style.display = 'none';
+            }}
+          />
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo(a)!</h1>
+          <p className="text-gray-600 max-w-md mx-auto mb-8">
+            Aceda às suas fotografias escolares usando o código fornecido.
+          </p>
+        </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="w-full max-w-sm"
-      >
-        <div className="bg-white p-8 rounded-lg shadow-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="access-code" className="text-sm font-medium text-gray-700">
-                Código de Acesso
-              </label>
-              <Input
-                id="access-code"
-                type="text"
-                placeholder="Insira o código de acesso"
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                className="text-center"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90 transition-colors"
-              disabled={isLoading}
-            >
-              {isLoading ? "A verificar..." : "Aceder às minhas fotos"}
-            </Button>
-          </form>
-        </div>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="w-full max-w-sm"
+        >
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label htmlFor="access-code" className="text-sm font-medium text-gray-700">
+                  Código de Acesso
+                </label>
+                <Input
+                  id="access-code"
+                  type="text"
+                  placeholder="Insira o código de acesso"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  className="text-center"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 transition-colors"
+                disabled={isLoading}
+              >
+                {isLoading ? "A verificar..." : "Aceder às minhas fotos"}
+              </Button>
+            </form>
+          </div>
+        </motion.div>
 
-      <footer className="mt-12 text-center text-sm text-gray-500">
-        <p>Duplo Efeito Fotografia © {new Date().getFullYear()}</p>
-        <p className="mt-1">
-          <a href="mailto:info@duploefeito.com" className="hover:text-primary">
-            info@duploefeito.com
-          </a>
-        </p>
-      </footer>
+        <footer className="mt-12 text-center text-sm text-gray-500">
+          <p>Duplo Efeito Fotografia © {new Date().getFullYear()}</p>
+          <p className="mt-1">
+            <a href="mailto:pedidos@duploefeito.com" className="hover:text-primary">
+              pedidos@duploefeito.com
+            </a>
+          </p>
+        </footer>
+      </div>
     </div>
   );
 };
