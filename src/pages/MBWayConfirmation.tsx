@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { OrderSummary } from "@/components/store/OrderSummary";
+import { ArrowLeft, Clock } from "lucide-react";
 
 const MBWayConfirmation = () => {
   const location = useLocation();
@@ -49,44 +50,50 @@ const MBWayConfirmation = () => {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <div className="p-6 sm:p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Pagamento MBWay em Processamento
-              </h1>
-              <p className="text-gray-600">
-                Foi enviado um pedido de pagamento para o seu telemóvel
-              </p>
-            </div>
+    <div className="min-h-screen bg-gradient-soft py-12">
+      <div className="max-w-4xl mx-auto px-4 space-y-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="mb-6 hover:bg-white/50"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar à Loja
+        </Button>
 
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Tempo Restante
-                </h2>
-                <Progress value={progress} className="h-3" />
-                <p className="text-center mt-2 text-lg font-medium text-gray-700">
-                  {minutes}:{seconds.toString().padStart(2, "0")}
+        <div className="grid gap-8 md:grid-cols-2">
+          <Card className="bg-white shadow-lg rounded-xl overflow-hidden animate-fade-up order-2 md:order-1">
+            <div className="p-6 space-y-6">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  Pagamento MBWay em Processamento
+                </h1>
+                <p className="text-gray-600">
+                  Foi enviado um pedido de pagamento para o seu telemóvel
                 </p>
               </div>
-            </div>
 
-            <div className="mt-8 text-center">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="w-full sm:w-auto"
-              >
-                Voltar à Página Inicial
-              </Button>
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <div className="flex items-center justify-center mb-4">
+                    <Clock className="w-6 h-6 text-primary mr-2" />
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Tempo Restante
+                    </h2>
+                  </div>
+                  <Progress value={progress} className="h-3 mb-2" />
+                  <p className="text-center font-medium text-gray-700">
+                    {minutes}:{seconds.toString().padStart(2, "0")}
+                  </p>
+                </div>
+              </div>
             </div>
+          </Card>
+
+          <div className="order-1 md:order-2">
+            <OrderSummary orderDetails={orderDetails} />
           </div>
-        </Card>
-
-        <OrderSummary orderDetails={orderDetails} />
+        </div>
       </div>
     </div>
   );
