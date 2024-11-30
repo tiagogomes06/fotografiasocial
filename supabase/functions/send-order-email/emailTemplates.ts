@@ -79,5 +79,3 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
     </html>
   `;
 };
-
-export type { OrderDetails };
