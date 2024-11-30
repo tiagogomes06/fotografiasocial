@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Product } from "@/types/admin";
 import { cn } from "@/lib/utils";
+import ProductSelect from "./ProductSelect";
 
 interface PhotoCardProps {
   photo: string;
@@ -48,45 +48,11 @@ const PhotoCard = ({
             className="animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-sm font-medium mb-2 text-gray-700">Escolha um produto:</h4>
-            <div className="relative">
-              <Select
-                value={selectedProduct}
-                onValueChange={(value) => {
-                  onProductSelect(value);
-                }}
-              >
-                <SelectTrigger 
-                  className="w-full bg-white"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <SelectValue placeholder="Selecione um produto" />
-                </SelectTrigger>
-                <SelectContent 
-                  className="fixed bg-white border shadow-xl w-[var(--radix-select-trigger-width)] max-h-[--radix-select-content-available-height]"
-                  onPointerDownOutside={(e) => e.preventDefault()}
-                  position="popper"
-                  sideOffset={5}
-                >
-                  <div 
-                    className="bg-white rounded-lg divide-y divide-gray-100"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {products.map((product) => (
-                      <SelectItem 
-                        key={product.id} 
-                        value={product.id}
-                        className="cursor-pointer hover:bg-gray-100 bg-white"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {product.name} - {product.price}€
-                      </SelectItem>
-                    ))}
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
+            <ProductSelect
+              selectedProduct={selectedProduct}
+              onProductSelect={onProductSelect}
+              products={products}
+            />
           </div>
         )}
       </CardContent>

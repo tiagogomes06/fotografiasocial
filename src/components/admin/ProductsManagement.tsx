@@ -30,6 +30,7 @@ export const ProductsManagement = () => {
     name: "",
     description: "",
     price: "",
+    image_url: "",
   });
 
   const queryClient = useQueryClient();
@@ -74,13 +75,14 @@ export const ProductsManagement = () => {
       name: formData.name,
       description: formData.description,
       price: Number(formData.price),
+      image_url: formData.image_url,
     });
   };
 
   const handleClose = () => {
     setIsOpen(false);
     setEditingProduct(null);
-    setFormData({ name: "", description: "", price: "" });
+    setFormData({ name: "", description: "", price: "", image_url: "" });
   };
 
   const handleEdit = (product: any) => {
@@ -89,6 +91,7 @@ export const ProductsManagement = () => {
       name: product.name,
       description: product.description || "",
       price: product.price.toString(),
+      image_url: product.image_url || "",
     });
     setIsOpen(true);
   };
@@ -132,6 +135,17 @@ export const ProductsManagement = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="image_url">URL da Imagem</Label>
+                <Input
+                  id="image_url"
+                  value={formData.image_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, image_url: e.target.value })
+                  }
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="price">Preço (€)</Label>
                 <Input
                   id="price"
@@ -155,6 +169,7 @@ export const ProductsManagement = () => {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Imagem</TableHead>
             <TableHead>Nome</TableHead>
             <TableHead>Descrição</TableHead>
             <TableHead>Preço</TableHead>
@@ -164,6 +179,17 @@ export const ProductsManagement = () => {
         <TableBody>
           {products.map((product) => (
             <TableRow key={product.id}>
+              <TableCell>
+                {product.image_url ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="h-10 w-10 object-cover rounded"
+                  />
+                ) : (
+                  "Sem imagem"
+                )}
+              </TableCell>
               <TableCell>{product.name}</TableCell>
               <TableCell>{product.description}</TableCell>
               <TableCell>{product.price}€</TableCell>
