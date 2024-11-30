@@ -45,23 +45,23 @@ export const uploadPhoto = async (file: File, studentId: string) => {
     reader.readAsDataURL(file);
   });
 
-  // Upload to FTP
-  const ftpResponse = await supabase.functions.invoke('ftp-upload', {
+  // Upload to S3 via Edge Function
+  const s3Response = await supabase.functions.invoke('s3-upload', {
     body: {
       fileData: base64Data,
       fileName: fileName,
     },
   });
 
-  if (ftpResponse.error) {
-    throw new Error('Failed to upload to FTP server');
+  if (s3Response.error) {
+    throw new Error('Failed to upload to S3');
   }
 
-  // Create photo record with FTP URL
+  // Create photo record with S3 URL
   const { data, error } = await supabase
     .from('photos')
     .insert({ 
-      url: ftpResponse.data.url, 
+      url: s3Response.data.url, 
       student_id: studentId 
     })
     .select()
