@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Download, ShoppingBag, X } from "lucide-react";
 import { downloadSinglePhoto, downloadAllPhotos } from "@/utils/downloadUtils";
@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -15,6 +16,36 @@ interface PhotoGalleryProps {
 const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const navigate = useNavigate();
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [schoolInfo, setSchoolInfo] = useState({ schoolName: "", className: "" });
+
+  useEffect(() => {
+    const fetchSchoolInfo = async () => {
+      const studentId = localStorage.getItem('studentId');
+      if (!studentId) return;
+
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          class:classes (
+            name,
+            school:schools (
+              name
+            )
+          )
+        `)
+        .eq('id', studentId)
+        .single();
+
+      if (data) {
+        setSchoolInfo({
+          schoolName: data.class.school.name,
+          className: data.class.name
+        });
+      }
+    };
+
+    fetchSchoolInfo();
+  }, []);
 
   const handleSingleDownload = (photoUrl: string, index: number) => {
     downloadSinglePhoto(photoUrl, `${studentName}_foto_${index + 1}.jpg`);
@@ -38,11 +69,23 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Card className="bg-white/95 backdrop-blur-sm border shadow-lg rounded-xl overflow-hidden">
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Fotos de {studentName}
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{schoolInfo.schoolName}</span>
+                {schoolInfo.schoolName && schoolInfo.className && (
+                  <>
+                    <span>•</span>
+                    <span>{schoolInfo.className}</span>
+                  </>
+                )}
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                {studentName}
+              </h2>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto">
               <Button 
                 onClick={handleAllDownload} 
                 variant="outline" 
