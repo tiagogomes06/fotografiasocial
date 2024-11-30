@@ -160,7 +160,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
           <QRCodeSVG value={qrValue} size={256} />
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
-            <p className="text-sm text-muted-foreground">Site para acesso: fotografia.escolar.duploefeito.com</p>
+            <p className="text-sm text-muted-foreground">Site para acesso: fotografiaescolar.duploefeito.com</p>
           </div>
         </div>
       </DialogContent>
