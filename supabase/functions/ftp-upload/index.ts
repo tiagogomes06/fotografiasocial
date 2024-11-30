@@ -52,7 +52,7 @@ serve(async (req) => {
       .from('photos')
       .getPublicUrl(`temp/${fileName}`);
 
-    // Now upload to FTP using the Supabase URL
+    // Now upload to FTP using the public URL
     client = new Client();
     client.ftp.verbose = true;
     
@@ -75,10 +75,22 @@ serve(async (req) => {
       console.log('Directory already exists or could not be created:', error);
     }
 
-    // Upload directly using the binary data
+    // Download the file from Supabase public URL and upload to FTP
     console.log('Starting FTP upload...');
-    const tempFile = new Uint8Array(bytes);
-    await client.uploadFrom(tempFile, `${ftpPath}/${fileName}`);
+    const response = await fetch(publicUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+    
+    // Write the buffer to a temporary file
+    const tempFilePath = await Deno.makeTempFile();
+    await Deno.writeFile(tempFilePath, buffer);
+    
+    // Upload the temporary file to FTP
+    await client.uploadFrom(tempFilePath, `${ftpPath}/${fileName}`);
+    
+    // Clean up the temporary file
+    await Deno.remove(tempFilePath);
+    
     console.log("File uploaded successfully to FTP");
 
     // Delete temporary file from Supabase Storage after 3 seconds
