@@ -25,9 +25,10 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <title>${title}</title>
     </head>
-    <body style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 1.25rem;">
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 1.25rem;">
       <div style="background-color: white; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
         <h1 style="color: #111827; margin-bottom: 1rem; text-align: center; font-size: 1.5rem; font-weight: 600;">${title}</h1>
         <p style="text-align: center; color: #4b5563; margin-bottom: 1.5rem;">${message}</p>
@@ -53,17 +54,19 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
       <div style="background-color: white; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
         <h2 style="color: #111827; margin-bottom: 1rem; font-size: 1.25rem; font-weight: 600;">Itens da Encomenda</h2>
         
-        ${order.order_items.map(item => `
-          <div style="padding: 1rem; margin-bottom: 1rem; background-color: #f9fafb; border-radius: 0.5rem;">
-            <p style="margin: 0.25rem 0; font-weight: 600; color: #374151;">${item.products.name}</p>
-            <p style="margin: 0.25rem 0; color: #4b5563;">Quantidade: ${item.quantity}</p>
-            <p style="margin: 0.25rem 0; color: #4b5563;">Preço: ${item.price_at_time}€</p>
-            <a href="${item.photos.url}" 
-               style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 0.5rem; font-weight: 500;">
-              Ver Foto
-            </a>
-          </div>
-        `).join('')}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${order.order_items.map(item => `
+            <div style="padding: 1rem; background-color: #f9fafb; border-radius: 0.5rem;">
+              <p style="margin: 0.25rem 0; font-weight: 600; color: #374151;">${item.products.name}</p>
+              <p style="margin: 0.25rem 0; color: #4b5563;">Quantidade: ${item.quantity}</p>
+              <p style="margin: 0.25rem 0; color: #4b5563;">Preço: ${item.price_at_time}€</p>
+              <a href="${item.photos.url}" 
+                style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 0.5rem; font-weight: 500;">
+                Ver Foto
+              </a>
+            </div>
+          `).join('')}
+        </div>
 
         <div style="margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -86,5 +89,5 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
       </div>
     </body>
     </html>
-  `;
+  `.trim();
 };
