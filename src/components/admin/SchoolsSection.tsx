@@ -33,18 +33,18 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold flex items-center gap-2">
           <SchoolIcon className="h-8 w-8" />
-          Schools
+          Escolas
         </h2>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add School
+              Adicionar Escola
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New School</DialogTitle>
+              <DialogTitle>Adicionar Nova Escola</DialogTitle>
             </DialogHeader>
             <Form {...schoolForm}>
               <form onSubmit={schoolForm.handleSubmit(handleSubmit)} className="space-y-4">
@@ -53,14 +53,14 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
                   name="schoolName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>School Name</FormLabel>
+                      <FormLabel>Nome da Escola</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter school name" {...field} />
+                        <Input placeholder="Introduza o nome da escola" {...field} />
                       </FormControl>
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">Add School</Button>
+                <Button type="submit" className="w-full">Adicionar Escola</Button>
               </form>
             </Form>
           </DialogContent>
@@ -70,9 +70,9 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>School Name</TableHead>
-            <TableHead>Classes</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Nome da Escola</TableHead>
+            <TableHead>Turmas</TableHead>
+            <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,7 +87,7 @@ export const SchoolsSection = ({ schools, onAddSchool, onSelectSchool }: Schools
                   onClick={() => onSelectSchool(school)}
                 >
                   <Users className="h-4 w-4 mr-1" />
-                  Manage Classes
+                  Gerir Turmas
                 </Button>
               </TableCell>
             </TableRow>

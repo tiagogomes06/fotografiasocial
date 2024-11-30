@@ -175,7 +175,7 @@ export const OrdersManagement = () => {
                         </div>
 
                         <div>
-                          <h3 className="font-semibold mb-2">Items</h3>
+                          <h3 className="font-semibold mb-2">Itens</h3>
                           <Table>
                             <TableHeader>
                               <TableRow>
