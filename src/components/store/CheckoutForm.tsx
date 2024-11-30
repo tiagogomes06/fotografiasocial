@@ -112,6 +112,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         const shippingCost = selectedShippingMethod?.price || 0;
         const subtotal = order.total_amount - shippingCost;
         
+        // Each cart item represents one photo with its selected product
         const orderItems = cart.map(item => ({
           name: "Fotografia",
           quantity: 1,
