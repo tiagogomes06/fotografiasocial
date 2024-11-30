@@ -26,29 +26,23 @@ const PhotoCard = ({
         "overflow-hidden transition-all duration-300 bg-white/95 backdrop-blur-sm hover:shadow-lg rounded-xl",
         isSelected && "ring-2 ring-primary ring-offset-2"
       )}
-      onClick={() => onSelect(photo)}
     >
-      <CardContent className={cn(
-        "p-0",
-        isSelected ? "pb-4" : ""
-      )}>
-        <div className="relative group cursor-pointer">
+      <CardContent className="p-0">
+        <div 
+          className="relative group cursor-pointer"
+          onClick={() => onSelect(photo)}
+        >
           <img
             src={photo}
             alt="Foto"
-            className={cn(
-              "w-full aspect-square object-cover transition-all duration-300",
-              isSelected ? "opacity-100" : "hover:opacity-90 group-hover:scale-[1.02]"
-            )}
+            className="w-full aspect-square object-cover transition-all duration-300 group-hover:opacity-90"
           />
-          {!isSelected && (
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
         </div>
         
         {isSelected && (
           <div 
-            className="animate-fade-in px-4 mt-4"
+            className="animate-fade-in p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <ProductSelect
