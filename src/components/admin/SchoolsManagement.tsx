@@ -1,9 +1,10 @@
 import { SchoolsSection } from "./SchoolsSection";
+import { ClassesSection } from "./ClassesSection";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { School } from "@/types/admin";
+import { School, Class } from "@/types/admin";
 
 export const SchoolsManagement = () => {
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -25,6 +26,39 @@ export const SchoolsManagement = () => {
       console.error(error);
     },
   });
+
+  const classMutation = useMutation({
+    mutationFn: async (values: { className: string }) => {
+      if (!selectedSchool) throw new Error("No school selected");
+      const { data, error } = await supabase
+        .from('classes')
+        .insert([{ name: values.className, school_id: selectedSchool.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Turma adicionada com sucesso");
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+    },
+    onError: (error) => {
+      toast.error("Erro ao adicionar turma");
+      console.error(error);
+    },
+  });
+
+  if (selectedSchool) {
+    return (
+      <ClassesSection
+        school={selectedSchool}
+        onAddClass={(values) => classMutation.mutate(values)}
+        onSelectClass={() => {}}
+        onBack={() => setSelectedSchool(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-8">
