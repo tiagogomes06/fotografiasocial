@@ -38,8 +38,9 @@ const AccessPage = () => {
           return;
         }
 
-        // Store the student ID in localStorage
+        // Store the student ID and access code in localStorage
         localStorage.setItem("studentId", student.id);
+        localStorage.setItem("accessCode", code);
         
         // Get photo URLs
         const photoUrls = student.photos.map((photo: { url: string }) => {
@@ -55,8 +56,10 @@ const AccessPage = () => {
             photos: photoUrls,
             studentName: student.name,
             studentId: student.id,
-            fromQR: true 
-          } 
+            fromQR: true,
+            authenticated: true
+          },
+          replace: true
         });
       } catch (error) {
         console.error("Error verifying access code:", error);

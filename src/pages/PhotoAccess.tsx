@@ -1,24 +1,45 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import PhotoGallery from "@/components/PhotoGallery";
 
 const PhotoAccess = () => {
   const [accessCode, setAccessCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { 
+    photos?: string[],
+    studentName?: string,
+    studentId?: string,
+    fromQR?: boolean,
+    authenticated?: boolean
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Check if we have a stored access code
+    const storedAccessCode = localStorage.getItem("accessCode");
+    if (storedAccessCode && !state?.authenticated) {
+      handleAccessCodeVerification(storedAccessCode);
+    }
+  }, []);
+
+  const handleAccessCodeVerification = async (code: string) => {
     setIsLoading(true);
-
     try {
       const { data: student, error } = await supabase
         .from("students")
-        .select("id")
-        .eq("access_code", accessCode)
+        .select(`
+          id,
+          name,
+          photos (
+            url
+          )
+        `)
+        .eq("access_code", code)
         .single();
 
       if (error || !student) {
@@ -26,11 +47,25 @@ const PhotoAccess = () => {
         return;
       }
 
-      // Store the student ID in localStorage
       localStorage.setItem("studentId", student.id);
-      
-      // Redirect to store
-      navigate(`/store`);
+      localStorage.setItem("accessCode", code);
+
+      const photoUrls = student.photos.map((photo: { url: string }) => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('photos')
+          .getPublicUrl(photo.url.split('/').pop() || '');
+        return publicUrl;
+      });
+
+      navigate("/", { 
+        state: { 
+          photos: photoUrls,
+          studentName: student.name,
+          studentId: student.id,
+          authenticated: true
+        },
+        replace: true
+      });
     } catch (error) {
       console.error("Error:", error);
       toast.error("Ocorreu um erro ao verificar o código");
@@ -38,6 +73,16 @@ const PhotoAccess = () => {
       setIsLoading(false);
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleAccessCodeVerification(accessCode);
+  };
+
+  // If we have photos in the state and are authenticated, show the gallery
+  if (state?.photos && state?.studentName && state?.authenticated) {
+    return <PhotoGallery photos={state.photos} studentName={state.studentName} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
