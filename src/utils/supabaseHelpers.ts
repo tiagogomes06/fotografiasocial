@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { School, Class, Student } from "@/types/admin";
+import { toast } from "sonner";
 
 export const createSchool = async (name: string) => {
   const { data, error } = await supabase
@@ -35,40 +36,67 @@ export const createStudent = async (name: string, classId: string, accessCode: s
 };
 
 export const uploadPhoto = async (file: File, studentId: string) => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${crypto.randomUUID()}.${fileExt}`;
+  try {
+    console.log('Iniciando upload da foto:', { fileName: file.name, fileSize: file.size, fileType: file.type });
 
-  // Get the file as base64
-  const base64Data = await new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
+    if (!file.type.startsWith('image/')) {
+      const errorMsg = `Tipo de arquivo inválido: ${file.type}. Apenas imagens são permitidas.`;
+      console.error(errorMsg);
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
 
-  // Upload to Google Drive via Edge Function
-  const driveResponse = await supabase.functions.invoke('drive-upload', {
-    body: {
-      fileData: base64Data,
-      fileName: fileName,
-    },
-  });
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    console.log('Nome do arquivo gerado:', fileName);
 
-  if (driveResponse.error) {
-    throw new Error('Failed to upload to Google Drive');
+    // Upload para o bucket 'photos'
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(fileName, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Erro no upload para Storage:', uploadError);
+      toast.error(`Erro no upload: ${uploadError.message}`);
+      throw uploadError;
+    }
+
+    console.log('Upload concluído:', uploadData);
+
+    // Obter URL pública
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(fileName);
+
+    console.log('URL pública gerada:', publicUrl);
+
+    // Criar registro na tabela photos
+    const { data: photoRecord, error: dbError } = await supabase
+      .from('photos')
+      .insert({
+        url: publicUrl,
+        student_id: studentId
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Erro ao salvar na tabela photos:', dbError);
+      toast.error(`Erro ao salvar foto: ${dbError.message}`);
+      throw dbError;
+    }
+
+    console.log('Registro criado na tabela photos:', photoRecord);
+    return photoRecord;
+
+  } catch (error) {
+    console.error('Erro durante o processo de upload:', error);
+    toast.error(`Erro no upload: ${error.message}`);
+    throw error;
   }
-
-  // Create photo record with Google Drive URL
-  const { data, error } = await supabase
-    .from('photos')
-    .insert({ 
-      url: driveResponse.data.url, 
-      student_id: studentId 
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
 };
 
 export const fetchSchools = async (): Promise<School[]> => {
