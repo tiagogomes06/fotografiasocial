@@ -1,5 +1,6 @@
 import { SchoolsSection } from "./SchoolsSection";
 import { ClassesSection } from "./ClassesSection";
+import { StudentsSection } from "./StudentsSection";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { School, Class } from "@/types/admin";
 
 export const SchoolsManagement = () => {
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const queryClient = useQueryClient();
 
   const { data: schools = [] } = useQuery({
@@ -57,7 +59,6 @@ export const SchoolsManagement = () => {
     },
     onSuccess: (newClass) => {
       toast.success("Turma adicionada com sucesso");
-      // Update the selected school with the new class
       if (selectedSchool) {
         setSelectedSchool({
           ...selectedSchool,
@@ -72,12 +73,96 @@ export const SchoolsManagement = () => {
     },
   });
 
+  const studentMutation = useMutation({
+    mutationFn: async (values: { studentName: string }) => {
+      if (!selectedClass) throw new Error("No class selected");
+      const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const { data, error } = await supabase
+        .from('students')
+        .insert([{ 
+          name: values.studentName, 
+          class_id: selectedClass.id,
+          access_code: accessCode
+        }])
+        .select(`
+          id,
+          name,
+          access_code,
+          class_id,
+          created_at,
+          photos (
+            id,
+            url
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newStudent) => {
+      toast.success("Estudante adicionado com sucesso");
+      if (selectedClass && selectedSchool) {
+        const updatedClass = {
+          ...selectedClass,
+          students: [...selectedClass.students, { ...newStudent, photoUrl: newStudent.photos?.[0]?.url }]
+        };
+        setSelectedClass(updatedClass);
+        
+        const updatedSchool = {
+          ...selectedSchool,
+          classes: selectedSchool.classes.map(cls => 
+            cls.id === selectedClass.id ? updatedClass : cls
+          )
+        };
+        setSelectedSchool(updatedSchool);
+      }
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+    },
+    onError: (error) => {
+      toast.error("Erro ao adicionar estudante");
+      console.error(error);
+    },
+  });
+
+  const handlePhotoUploaded = (studentId: string, photoUrl: string) => {
+    if (selectedClass && selectedSchool) {
+      const updatedClass = {
+        ...selectedClass,
+        students: selectedClass.students.map(student =>
+          student.id === studentId ? { ...student, photoUrl } : student
+        )
+      };
+      setSelectedClass(updatedClass);
+
+      const updatedSchool = {
+        ...selectedSchool,
+        classes: selectedSchool.classes.map(cls =>
+          cls.id === selectedClass.id ? updatedClass : cls
+        )
+      };
+      setSelectedSchool(updatedSchool);
+      queryClient.invalidateQueries({ queryKey: ['schools'] });
+    }
+  };
+
+  if (selectedClass) {
+    return (
+      <StudentsSection
+        selectedClass={selectedClass}
+        onAddStudent={(values) => studentMutation.mutate(values)}
+        onBack={() => setSelectedClass(null)}
+        onPhotoUploaded={handlePhotoUploaded}
+      />
+    );
+  }
+
   if (selectedSchool) {
     return (
       <ClassesSection
         school={selectedSchool}
         onAddClass={(values) => classMutation.mutate(values)}
-        onSelectClass={() => {}}
+        onSelectClass={setSelectedClass}
         onBack={() => setSelectedSchool(null)}
       />
     );
