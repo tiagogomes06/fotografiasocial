@@ -44,16 +44,29 @@ const PhotoCard = ({
         </div>
         
         {isSelected && (
-          <div className="animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="animate-fade-in" 
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             <h4 className="text-sm font-medium mb-2 text-gray-700">Escolha um produto:</h4>
             <Select
               value={selectedProduct}
-              onValueChange={onProductSelect}
+              onValueChange={(value) => {
+                onProductSelect(value);
+              }}
             >
-              <SelectTrigger className="w-full bg-white">
+              <SelectTrigger 
+                className="w-full bg-white"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <SelectValue placeholder="Selecione um produto" />
               </SelectTrigger>
-              <SelectContent className="bg-white border shadow-lg">
+              <SelectContent 
+                className="bg-white border shadow-lg"
+                onPointerDownOutside={(e) => e.preventDefault()}
+              >
                 {products.map((product) => (
                   <SelectItem 
                     key={product.id} 
