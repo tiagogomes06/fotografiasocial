@@ -18,6 +18,9 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [schoolInfo, setSchoolInfo] = useState({ schoolName: "", className: "" });
 
+  // Remove duplicates from photos array
+  const uniquePhotos = [...new Set(photos)];
+
   useEffect(() => {
     const fetchSchoolInfo = async () => {
       const studentId = localStorage.getItem('studentId');
@@ -52,7 +55,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   };
 
   const handleAllDownload = () => {
-    downloadAllPhotos(photos, studentName);
+    downloadAllPhotos(uniquePhotos, studentName);
   };
 
   const goToStore = () => {
@@ -62,7 +65,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       navigate('/');
       return;
     }
-    navigate('/store', { state: { photos, studentName, studentId } });
+    navigate('/store', { state: { photos: uniquePhotos, studentName, studentId } });
   };
 
   return (
@@ -107,9 +110,9 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {photos.map((photo, index) => (
+        {uniquePhotos.map((photo, index) => (
           <Card 
-            key={index} 
+            key={photo} 
             className="group overflow-hidden bg-white/95 backdrop-blur-sm border shadow-md hover:shadow-xl transition-all duration-300 rounded-xl"
           >
             <CardContent className="p-4 space-y-3">
