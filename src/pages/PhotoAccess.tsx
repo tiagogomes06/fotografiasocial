@@ -7,10 +7,14 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Camera, ArrowRight } from "lucide-react";
+import PhotoGallery from "@/components/PhotoGallery";
 
 const PhotoAccess = () => {
   const [accessCode, setAccessCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [studentName, setStudentName] = useState("");
+  const [showGallery, setShowGallery] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,13 +53,20 @@ const PhotoAccess = () => {
       }
 
       localStorage.setItem("studentId", student.id);
-      navigate("/", { state: { photos: photos.map((p) => p.url), studentName: student.name } });
+      setPhotos(photos.map((p) => p.url));
+      setStudentName(student.name);
+      setShowGallery(true);
     } catch (error) {
+      console.error("Error:", error);
       toast.error("Ocorreu um erro ao processar o pedido");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (showGallery && photos.length > 0) {
+    return <PhotoGallery photos={photos} studentName={studentName} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center p-4">
