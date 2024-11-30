@@ -1,30 +1,6 @@
-interface OrderDetails {
-  id: string;
-  shipping_name: string | null;
-  shipping_address: string | null;
-  shipping_city: string | null;
-  shipping_postal_code: string | null;
-  email: string | null;
-  shipping_phone: string | null;
-  payment_method: string | null;
-  total_amount: number;
-  shipping_methods: {
-    name: string;
-    price: number;
-  };
-  order_items: Array<{
-    quantity: number;
-    price_at_time: number;
-    products: {
-      name: string;
-    };
-    photos: {
-      url: string;
-    };
-  }>;
-}
+import { OrderDetails } from './types';
 
-const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAdmin = false) => {
+export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAdmin = false) => {
   const title = type === 'created' ? 
     'Nova Encomenda Criada' : 
     'Pagamento Recebido';
@@ -34,11 +10,11 @@ const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAd
     isAdmin ? 'Foi recebido um novo pagamento.' : 'O pagamento da sua encomenda foi confirmado.';
 
   const shippingInfo = order.shipping_address ? 
-    `<div class="mb-4 p-4 bg-gray-50 rounded-lg">
-      <p class="font-semibold mb-2">Morada de Envio:</p>
-      <p>${order.shipping_name}</p>
-      <p>${order.shipping_address}</p>
-      <p>${order.shipping_postal_code} ${order.shipping_city}</p>
+    `<div style="margin-bottom: 16px; padding: 16px; background-color: #f9fafb; border-radius: 8px;">
+      <p style="font-weight: 600; margin-bottom: 8px;">Morada de Envio:</p>
+      <p style="margin: 4px 0;">${order.shipping_name}</p>
+      <p style="margin: 4px 0;">${order.shipping_address}</p>
+      <p style="margin: 4px 0;">${order.shipping_postal_code} ${order.shipping_city}</p>
     </div>` : '';
 
   return `
@@ -81,7 +57,7 @@ const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAd
               <p style="margin: 4px 0; font-weight: 600; color: #374151;">${item.products.name}</p>
               <p style="margin: 4px 0; color: #6b7280;">Quantidade: ${item.quantity}</p>
               <p style="margin: 4px 0; color: #6b7280;">Preço: ${item.price_at_time}€</p>
-              <a href="${item.photos.url}" 
+              <a href="${item.photos.url.replace(/([^.]+)([^.]+)$/, '$1.$2')}" 
                  style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 8px; font-weight: 500;">
                 Ver Foto
               </a>
@@ -104,5 +80,4 @@ const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAd
   `;
 };
 
-export { createEmailTemplate };
 export type { OrderDetails };
