@@ -16,6 +16,15 @@ const ProductSelect = ({
   products,
   quantity = 1
 }: ProductSelectProps) => {
+
+  const handleQuantityChange = (productId: string, newQuantity: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (newQuantity >= 1) {
+      onProductSelect(productId, newQuantity);
+    }
+  };
+
   return (
     <div className="space-y-3 animate-fade-up">
       <h2 className="text-sm font-medium text-muted-foreground">Escolha um produto:</h2>
@@ -40,18 +49,16 @@ const ProductSelect = ({
                 </p>
                 
                 {selectedProduct === product.id && (
-                  <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                  <div 
+                    className="flex items-center gap-2 mt-2" 
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (quantity > 1) {
-                          onProductSelect(product.id, quantity - 1);
-                        }
-                      }}
+                      onClick={(e) => handleQuantityChange(product.id, quantity - 1, e)}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -61,10 +68,7 @@ const ProductSelect = ({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onProductSelect(product.id, quantity + 1);
-                      }}
+                      onClick={(e) => handleQuantityChange(product.id, quantity + 1, e)}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
