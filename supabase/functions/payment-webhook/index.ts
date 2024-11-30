@@ -22,6 +22,7 @@ interface EuPagoWebhookPayload {
   entidade?: string;
   comissao?: string;
   local?: string;
+  estado?: string;
 }
 
 async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
@@ -63,7 +64,7 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
 }
 
 async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookPayload) {
-  console.log(`Updating order ${orderId} with payment details:`, paymentDetails);
+  console.log(`[payment-webhook] Updating order ${orderId} with payment details:`, paymentDetails);
   
   try {
     // First get the order details for the email
@@ -74,37 +75,41 @@ async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookP
       .single();
 
     if (orderError) {
-      console.error('Error fetching order:', orderError);
+      console.error('[payment-webhook] Error fetching order:', orderError);
       throw orderError;
     }
 
-    // Update the order status
+    // Update the order status based on the payment status
+    const paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
+    
     const { error: updateError } = await supabase
       .from('orders')
       .update({ 
-        payment_status: 'completed',
+        payment_status: paymentStatus,
         payment_id: paymentDetails.transacao,
-        status: 'processing'
+        status: paymentStatus === 'completed' ? 'processing' : 'cancelled'
       })
       .eq('id', orderId);
 
     if (updateError) {
-      console.error('Error updating order status:', updateError);
+      console.error('[payment-webhook] Error updating order status:', updateError);
       throw updateError;
     }
 
-    console.log('Order status updated successfully');
+    console.log('[payment-webhook] Order status updated successfully');
     
-    // Send confirmation email
-    await sendPaymentConfirmationEmail(orderId, order);
+    // Only send confirmation email if payment was successful
+    if (paymentStatus === 'completed') {
+      await sendPaymentConfirmationEmail(orderId, order);
+    }
   } catch (error) {
-    console.error('Failed to process order update:', error);
+    console.error('[payment-webhook] Failed to process order update:', error);
     throw error;
   }
 }
 
 async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
-  console.log('Processing EuPago webhook with payload:', payload);
+  console.log('[payment-webhook] Processing EuPago webhook with payload:', payload);
   
   const orderId = payload.identificador;
   if (!orderId) {
@@ -115,12 +120,13 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
     throw new Error('Invalid payment notification: missing transaction ID or amount');
   }
 
-  console.log(`Processing payment for order ${orderId}:`, {
+  console.log(`[payment-webhook] Processing payment for order ${orderId}:`, {
     transactionId: payload.transacao,
     amount: payload.valor,
     method: payload.mp,
     date: payload.data,
-    location: payload.local
+    location: payload.local,
+    status: payload.estado
   });
 
   await updateOrderStatus(orderId, payload);
@@ -139,7 +145,7 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    console.log('Received webhook request:', {
+    console.log('[payment-webhook] Received webhook request:', {
       method: req.method,
       url: url.toString()
     });
@@ -148,7 +154,7 @@ serve(async (req) => {
     
     if (req.method === 'POST') {
       const body = await req.text();
-      console.log('POST body:', body);
+      console.log('[payment-webhook] POST body:', body);
       
       try {
         payload = JSON.parse(body);
@@ -164,7 +170,7 @@ serve(async (req) => {
       throw new Error(`Unsupported method: ${req.method}`);
     }
 
-    console.log('Parsed payload:', payload);
+    console.log('[payment-webhook] Parsed payload:', payload);
 
     const result = await handleEuPagoWebhook(payload);
 
@@ -172,7 +178,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    console.error('Webhook processing error:', error);
+    console.error('[payment-webhook] Webhook processing error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
