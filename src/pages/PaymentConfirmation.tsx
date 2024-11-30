@@ -1,4 +1,4 @@
-import { useLocation, Navigate } from "react-router-dom";
+import { useLocation, Navigate, useEffect } from "react-router-dom";
 import { ArrowLeft, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "@/components/store/OrderSummary";
@@ -8,6 +8,10 @@ const PaymentConfirmation = () => {
   const location = useLocation();
   const paymentDetails = location.state?.paymentDetails;
   const orderDetails = location.state?.orderDetails;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!paymentDetails || !orderDetails) {
     return <Navigate to="/" replace />;

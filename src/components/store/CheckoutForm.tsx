@@ -104,7 +104,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         const subtotal = order.total_amount - shippingCost;
         
         const orderItems = cart.map(item => ({
-          name: "Fotografia",
+          name: products.find(p => p.id === item.productId)?.name || "Fotografia",
           quantity: 1,
           price: item.price
         }));
