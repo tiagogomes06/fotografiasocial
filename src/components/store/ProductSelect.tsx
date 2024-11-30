@@ -1,14 +1,21 @@
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Minus, Plus } from "lucide-react";
 import { Product } from "@/types/admin";
+import { Button } from "@/components/ui/button";
 
 interface ProductSelectProps {
   selectedProduct: string | undefined;
-  onProductSelect: (productId: string) => void;
+  onProductSelect: (productId: string, quantity: number) => void;
   products: Product[];
+  quantity?: number;
 }
 
-const ProductSelect = ({ selectedProduct, onProductSelect, products }: ProductSelectProps) => {
+const ProductSelect = ({ 
+  selectedProduct, 
+  onProductSelect, 
+  products,
+  quantity = 1
+}: ProductSelectProps) => {
   return (
     <div className="space-y-3 animate-fade-up">
       <h2 className="text-sm font-medium text-muted-foreground">Escolha um produto:</h2>
@@ -16,7 +23,7 @@ const ProductSelect = ({ selectedProduct, onProductSelect, products }: ProductSe
         {products.map((product) => (
           <button
             key={product.id}
-            onClick={() => onProductSelect(product.id)}
+            onClick={() => onProductSelect(product.id, quantity)}
             className={cn(
               "relative p-3 rounded-lg text-left transition-all duration-200",
               "bg-white/50 hover:bg-white shadow-sm border border-border/50",
@@ -31,6 +38,38 @@ const ProductSelect = ({ selectedProduct, onProductSelect, products }: ProductSe
                 <p className="text-primary font-semibold text-sm mt-0.5">
                   {product.price}€
                 </p>
+                
+                {selectedProduct === product.id && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (quantity > 1) {
+                          onProductSelect(product.id, quantity - 1);
+                        }
+                      }}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center">{quantity}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onProductSelect(product.id, quantity + 1);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
               
               <div className={cn(
