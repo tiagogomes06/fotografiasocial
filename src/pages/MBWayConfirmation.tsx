@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { OrderSummary } from "@/components/store/OrderSummary";
 
 const MBWayConfirmation = () => {
   const location = useLocation();
@@ -49,7 +50,7 @@ const MBWayConfirmation = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto space-y-8">
         <Card className="bg-white shadow-lg rounded-lg overflow-hidden">
           <div className="p-6 sm:p-8">
             <div className="text-center mb-8">
@@ -71,46 +72,6 @@ const MBWayConfirmation = () => {
                   {minutes}:{seconds.toString().padStart(2, "0")}
                 </p>
               </div>
-
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Detalhes da Encomenda
-                </h2>
-                <dl className="divide-y divide-gray-200">
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Número da Encomenda</dt>
-                    <dd className="text-gray-900 font-medium">{orderDetails.orderId}</dd>
-                  </div>
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Total</dt>
-                    <dd className="text-gray-900 font-medium">{orderDetails.total}€</dd>
-                  </div>
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Nome</dt>
-                    <dd className="text-gray-900">{orderDetails.name}</dd>
-                  </div>
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Email</dt>
-                    <dd className="text-gray-900">{orderDetails.email}</dd>
-                  </div>
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Telefone</dt>
-                    <dd className="text-gray-900">{orderDetails.phone}</dd>
-                  </div>
-                  {orderDetails.address && (
-                    <div className="py-3 flex justify-between">
-                      <dt className="text-gray-600">Morada</dt>
-                      <dd className="text-gray-900">
-                        {orderDetails.address}, {orderDetails.postalCode} {orderDetails.city}
-                      </dd>
-                    </div>
-                  )}
-                  <div className="py-3 flex justify-between">
-                    <dt className="text-gray-600">Método de Envio</dt>
-                    <dd className="text-gray-900">{orderDetails.shippingMethod}</dd>
-                  </div>
-                </dl>
-              </div>
             </div>
 
             <div className="mt-8 text-center">
@@ -124,6 +85,8 @@ const MBWayConfirmation = () => {
             </div>
           </div>
         </Card>
+
+        <OrderSummary orderDetails={orderDetails} />
       </div>
     </div>
   );
