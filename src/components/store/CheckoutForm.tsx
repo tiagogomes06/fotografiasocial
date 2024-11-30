@@ -165,11 +165,11 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto">
-      <div className="bg-gradient-soft rounded-xl shadow-sm p-4 md:p-8 space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-gradient-soft rounded-xl shadow-sm p-4 md:p-6 space-y-6">
         <CheckoutHeader onBack={onBack} isProcessing={isProcessing} />
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           <ShippingForm
             formData={formData}
             setFormData={setFormData}

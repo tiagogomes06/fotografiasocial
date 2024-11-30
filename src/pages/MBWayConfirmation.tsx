@@ -10,8 +10,6 @@ import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 const MBWayConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(240);
-  const [progress, setProgress] = useState(100);
   const [isLoading, setIsLoading] = useState(true);
 
   const orderDetails = location.state?.orderDetails;
@@ -26,36 +24,10 @@ const MBWayConfirmation = () => {
       return true;
     };
 
-    const timer = setTimeout(() => {
-      if (checkOrderDetails()) {
-        setIsLoading(false);
-      }
-    }, 800);
-
-    return () => clearTimeout(timer);
+    if (checkOrderDetails()) {
+      setIsLoading(false);
+    }
   }, [location.state, orderDetails, navigate]);
-
-  useEffect(() => {
-    if (!orderDetails) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          toast.error("Tempo limite excedido. Por favor, tente novamente.");
-          navigate("/cart");
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [orderDetails, navigate]);
-
-  useEffect(() => {
-    setProgress((timeLeft / 240) * 100);
-  }, [timeLeft]);
 
   if (isLoading) {
     return (
@@ -71,9 +43,6 @@ const MBWayConfirmation = () => {
   if (!orderDetails) {
     return null;
   }
-
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
 
   return (
     <div className="min-h-screen bg-gradient-soft py-6 sm:py-12 px-4">
@@ -104,13 +73,10 @@ const MBWayConfirmation = () => {
                   <div className="flex items-center justify-center mb-4">
                     <Clock className="w-6 h-6 text-primary mr-2" />
                     <h2 className="text-lg font-semibold text-gray-900">
-                      Tempo Restante
+                      Aguardando Confirmação
                     </h2>
                   </div>
-                  <Progress value={progress} className="h-3 mb-2" />
-                  <p className="text-center font-medium text-gray-700">
-                    {minutes}:{seconds.toString().padStart(2, "0")}
-                  </p>
+                  <Progress value={100} className="h-3" />
                 </div>
 
                 <div className="bg-blue-50 rounded-xl p-4">
