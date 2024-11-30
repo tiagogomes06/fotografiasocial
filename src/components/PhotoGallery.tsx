@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -38,65 +39,71 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h2 className="text-xl md:text-2xl font-bold">Fotos de {studentName}</h2>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={handleAllDownload} variant="outline" className="w-full sm:w-auto">
-            <Download className="mr-2 h-4 w-4" />
-            Transferir Todas
-          </Button>
-          <Button onClick={goToStore} className="w-full sm:w-auto">
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Ir para a Loja
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Fotos de {studentName}</h2>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleAllDownload} variant="outline" className="w-full sm:w-auto">
+                <Download className="mr-2 h-4 w-4" />
+                Transferir Todas
+              </Button>
+              <Button onClick={goToStore} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                Ir para a Loja
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {photos.map((photo, index) => (
-          <div key={index} className="relative group space-y-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <div className="cursor-pointer aspect-square">
-                  <img
-                    src={photo}
-                    alt={`Foto ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
-                  />
-                </div>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] h-auto max-h-[90vh] p-0">
-                <div className="relative group">
-                  <img
-                    src={photo}
-                    alt={`Foto ${index + 1}`}
-                    className="w-full h-full object-contain rounded-lg"
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
-                      if (closeButton) closeButton.click();
-                    }}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-                  >
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handleSingleDownload(photo, index)}
-              className="w-full"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Transferir
-            </Button>
-          </div>
+          <Card key={index} className="group overflow-hidden bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardContent className="p-4 space-y-3">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="cursor-pointer aspect-square rounded-lg overflow-hidden">
+                    <img
+                      src={photo}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] h-auto max-h-[90vh] p-0">
+                  <div className="relative">
+                    <img
+                      src={photo}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
+                        if (closeButton) closeButton.click();
+                      }}
+                      className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleSingleDownload(photo, index)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Transferir
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
