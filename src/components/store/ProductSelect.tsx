@@ -21,11 +21,11 @@ const ProductSelect = ({
       <h2 className="text-sm font-medium text-muted-foreground">Escolha um produto:</h2>
       <div className="grid grid-cols-1 gap-2">
         {products.map((product) => (
-          <button
+          <div
             key={product.id}
             onClick={() => onProductSelect(product.id, quantity)}
             className={cn(
-              "relative p-3 rounded-lg text-left transition-all duration-200",
+              "relative p-3 rounded-lg text-left transition-all duration-200 cursor-pointer",
               "bg-white/50 hover:bg-white shadow-sm border border-border/50",
               selectedProduct === product.id && "ring-2 ring-primary bg-white"
             )}
@@ -81,7 +81,7 @@ const ProductSelect = ({
                 <Check className="w-3 h-3" />
               </div>
             </div>
-          </button>
+          </div>
         ))}
       </div>
     </div>
