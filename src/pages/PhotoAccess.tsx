@@ -95,7 +95,7 @@ const PhotoAccess = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <img
-        src="https://fotografiaescolar.duploefeito.com/logo.jpg"
+        src="/logo.jpg"
         alt="Duplo Efeito"
         className="w-32 h-auto mb-8"
         onError={(e) => {
