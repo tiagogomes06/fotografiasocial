@@ -1,13 +1,8 @@
 project_id = "iomjazjwpcmosxinznyu"
 
-[functions.create-payment]
-verify_jwt = true
-
-[functions.payment-webhook]
-verify_jwt = false
-
-[functions.send-email]
-verify_jwt = true
-
-[functions.send-order-email]
-verify_jwt = true
+[global.env]
+FTP_HOST = "bashir.servidorpt.pt"
+FTP_PORT = "21"
+FTP_USER = "tiagogom"
+FTP_PASSWORD = "kxuCUa8P.F74"
+FTP_BASE_URL = "fotografiaescolar.duploefeito.com/fotos_alojamento/"
