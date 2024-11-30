@@ -6,42 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const FTP_CONFIG = {
-  host: "bashir.servidorpt.pt",
-  port: 21,
-  user: "tiagogom",
-  password: "kxuCUa8P.F74",
-  baseUrl: "fotografiaescolar.duploefeito.com/fotos_alojamento"
-};
-
-async function setupFtpClient(): Promise<Client> {
-  const client = new Client();
-  client.ftp.verbose = true;
-  
-  console.log('Connecting to FTP with config:', { 
-    host: FTP_CONFIG.host, 
-    port: FTP_CONFIG.port,
-    user: FTP_CONFIG.user,
-    hasPassword: !!FTP_CONFIG.password
-  });
-
-  try {
-    await client.access({
-      host: FTP_CONFIG.host,
-      port: FTP_CONFIG.port,
-      user: FTP_CONFIG.user,
-      password: FTP_CONFIG.password,
-      secure: false,
-      timeout: 30000,
-    });
-    console.log('Successfully connected to FTP');
-    return client;
-  } catch (error) {
-    console.error('FTP connection error:', error);
-    throw error;
-  }
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -69,7 +33,21 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    client = await setupFtpClient();
+    client = new Client();
+    client.ftp.verbose = true;
+    
+    console.log('Connecting to FTP...');
+    await client.access({
+      host: "bashir.servidorpt.pt",
+      port: 21,
+      user: "tiagogom",
+      password: "kxuCUa8P.F74",
+      secure: false
+    });
+
+    // Create a temporary file
+    const tempFilePath = await Deno.makeTempFile();
+    await Deno.writeFile(tempFilePath, bytes);
 
     // Ensure /photos directory exists
     try {
@@ -81,10 +59,13 @@ serve(async (req) => {
 
     // Upload file
     console.log('Starting file upload...');
-    await client.uploadFrom(bytes.buffer, `/photos/${fileName}`);
+    await client.uploadFrom(tempFilePath, `/photos/${fileName}`);
     console.log("File uploaded successfully");
 
-    const publicUrl = `${FTP_CONFIG.baseUrl}/photos/${fileName}`;
+    // Clean up temp file
+    await Deno.remove(tempFilePath);
+
+    const publicUrl = `fotografiaescolar.duploefeito.com/fotos_alojamento/photos/${fileName}`;
     console.log('Generated public URL:', publicUrl);
 
     return new Response(
