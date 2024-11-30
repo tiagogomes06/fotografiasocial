@@ -2,7 +2,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const StoreHeader = ({ cartItemCount }: { cartItemCount: number }) => {
+interface StoreHeaderProps {
+  cartItemCount: number;
+  onCartClick: () => void;
+}
+
+const StoreHeader = ({ cartItemCount, onCartClick }: StoreHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -17,7 +22,7 @@ const StoreHeader = ({ cartItemCount }: { cartItemCount: number }) => {
       </Button>
       {cartItemCount > 0 && (
         <Button 
-          onClick={() => navigate('/cart')}
+          onClick={onCartClick}
           className="bg-primary hover:bg-primary/90 text-white transition-all duration-200 animate-fade-in"
         >
           Ver Carrinho ({cartItemCount})

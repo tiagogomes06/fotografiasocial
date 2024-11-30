@@ -132,17 +132,30 @@ const Store = () => {
     }
 
     if (validItems.length > 0) {
-      setCart(prev => [...prev, ...validItems]);
+      const newCart = [...cart, ...validItems];
+      setCart(newCart);
       setSelectedPhotos([]);
       setProductSelections({});
       toast.success("Itens adicionados ao carrinho");
     }
   };
 
+  const handleCartNavigation = () => {
+    navigate('/cart', { 
+      state: { 
+        cart,
+        products 
+      } 
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        <StoreHeader cartItemCount={cart.length} />
+        <StoreHeader 
+          cartItemCount={cart.length} 
+          onCartClick={handleCartNavigation}
+        />
         <StoreInstructions />
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
