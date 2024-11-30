@@ -18,6 +18,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -63,7 +64,15 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
 
   const handleClick = async () => {
     setIsOpen(true);
-    setTimeout(generateQRCodePNG, 500);
+    
+    // Pré-carregar o logótipo antes de gerar o PNG
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      setLogoLoaded(true);
+      setTimeout(generateQRCodePNG, 500);
+    };
+    img.src = "https://fotografiaescolar.duploefeito.com/logo.jpg";
   };
 
   const generateQRCodePNG = async () => {
@@ -77,8 +86,8 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         useCORS: true,
         allowTaint: true,
         onclone: function(clonedDoc) {
-          const img = clonedDoc.querySelector('img');
-          if (img) {
+          const images = clonedDoc.getElementsByTagName('img');
+          for (let img of images) {
             img.crossOrigin = "anonymous";
           }
         }
@@ -121,6 +130,10 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             alt="Duplo Efeito" 
             className="w-32 h-auto mb-4"
             crossOrigin="anonymous"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.style.display = 'none';
+            }}
           />
 
           {schoolInfo && (
@@ -137,13 +150,17 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
               alt={studentName}
               className="w-32 h-32 object-cover rounded-lg"
               crossOrigin="anonymous"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = 'none';
+              }}
             />
           )}
 
           <QRCodeSVG value={qrValue} size={256} />
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
-            <p className="text-sm text-muted-foreground">Site para acesso: fotografiaescolar.duploefeito.com</p>
+            <p className="text-sm text-muted-foreground">Site para acesso: fotografia.escolar.duploefeito.com</p>
           </div>
         </div>
       </DialogContent>
