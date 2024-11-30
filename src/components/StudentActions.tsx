@@ -18,6 +18,7 @@ const StudentActions = ({ student, onPhotoUploaded }: StudentActionsProps) => {
       <StudentQRCode
         accessCode={student.access_code}
         studentName={student.name}
+        studentId={student.id}
       />
     </div>
   );
