@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { CartItem } from "@/types/admin";
+import { CartItem, Product } from "@/types/admin";
 import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import ShippingForm from "./ShippingForm";
@@ -113,8 +113,8 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         const subtotal = order.total_amount - shippingCost;
         
         const orderItems = cart.map(item => ({
-          name: item.productName,
-          quantity: item.quantity,
+          name: "Fotografia",
+          quantity: 1,
           price: item.price
         }));
         

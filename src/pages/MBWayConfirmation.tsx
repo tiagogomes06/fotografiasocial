@@ -10,14 +10,12 @@ import { ArrowLeft, Clock, Loader2 } from "lucide-react";
 const MBWayConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState(240); // 4 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(240);
   const [progress, setProgress] = useState(100);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get order details from location state
   const orderDetails = location.state?.orderDetails;
 
-  // Initial check for order details and loading state
   useEffect(() => {
     const checkOrderDetails = () => {
       if (!location.state || !orderDetails) {
@@ -28,7 +26,6 @@ const MBWayConfirmation = () => {
       return true;
     };
 
-    // Add a small delay to show loading state and prevent flash
     const timer = setTimeout(() => {
       if (checkOrderDetails()) {
         setIsLoading(false);
@@ -38,7 +35,6 @@ const MBWayConfirmation = () => {
     return () => clearTimeout(timer);
   }, [location.state, orderDetails, navigate]);
 
-  // Countdown timer effect
   useEffect(() => {
     if (!orderDetails) return;
 
@@ -57,15 +53,13 @@ const MBWayConfirmation = () => {
     return () => clearInterval(timer);
   }, [orderDetails, navigate]);
 
-  // Update progress bar
   useEffect(() => {
     setProgress((timeLeft / 240) * 100);
   }, [timeLeft]);
 
-  // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
           <p className="text-gray-600">A processar o seu pedido...</p>
@@ -74,7 +68,6 @@ const MBWayConfirmation = () => {
     );
   }
 
-  // Ensure we have order details
   if (!orderDetails) {
     return null;
   }
@@ -83,8 +76,8 @@ const MBWayConfirmation = () => {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-gradient-soft py-12 animate-fade-in">
-      <div className="max-w-4xl mx-auto px-4 space-y-8">
+    <div className="min-h-screen bg-gradient-soft py-6 sm:py-12 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/cart")}
@@ -94,8 +87,8 @@ const MBWayConfirmation = () => {
           Voltar ao Carrinho
         </Button>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <Card className="bg-white shadow-lg rounded-xl overflow-hidden animate-fade-up order-2 md:order-1">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="bg-white shadow-lg rounded-xl overflow-hidden order-2 lg:order-1">
             <div className="p-6 space-y-6">
               <div className="text-center">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -129,7 +122,7 @@ const MBWayConfirmation = () => {
             </div>
           </Card>
 
-          <div className="order-1 md:order-2">
+          <div className="order-1 lg:order-2">
             <OrderSummary orderDetails={orderDetails} />
           </div>
         </div>
