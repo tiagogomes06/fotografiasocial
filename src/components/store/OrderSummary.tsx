@@ -30,33 +30,31 @@ export const OrderSummary = ({ orderDetails, className }: OrderSummaryProps) => 
         </div>
         
         <div className="grid gap-4 text-sm md:text-base">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
-              <p className="flex justify-between md:block">
+              <p className="flex flex-col md:flex-row md:items-center gap-1">
                 <span className="text-gray-500">Número da Encomenda:</span>
-                <span className="font-medium text-gray-900 md:ml-2">{orderDetails.orderId}</span>
+                <span className="font-medium text-gray-900 break-all">{orderDetails.orderId}</span>
               </p>
-              <p className="flex justify-between md:block">
+              <p className="flex flex-col md:flex-row md:items-center gap-1">
                 <span className="text-gray-500">Cliente:</span>
-                <span className="font-medium text-gray-900 md:ml-2">{orderDetails.name}</span>
+                <span className="font-medium text-gray-900">{orderDetails.name}</span>
               </p>
-            </div>
-            <div className="space-y-2">
-              <p className="flex justify-between md:block">
+              <p className="flex flex-col md:flex-row md:items-center gap-1">
                 <span className="text-gray-500">Email:</span>
-                <span className="font-medium text-gray-900 md:ml-2">{orderDetails.email}</span>
+                <span className="font-medium text-gray-900 break-all">{orderDetails.email}</span>
               </p>
-              <p className="flex justify-between md:block">
+              <p className="flex flex-col md:flex-row md:items-center gap-1">
                 <span className="text-gray-500">Telefone:</span>
-                <span className="font-medium text-gray-900 md:ml-2">{orderDetails.phone}</span>
+                <span className="font-medium text-gray-900">{orderDetails.phone}</span>
               </p>
             </div>
           </div>
           
           <div className="pt-2">
-            <p className="flex justify-between md:block">
+            <p className="flex flex-col md:flex-row md:items-center gap-1">
               <span className="text-gray-500">Método de Envio:</span>
-              <span className="font-medium text-gray-900 md:ml-2">{orderDetails.shippingMethod}</span>
+              <span className="font-medium text-gray-900">{orderDetails.shippingMethod}</span>
             </p>
           </div>
         </div>
