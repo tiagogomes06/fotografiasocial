@@ -23,12 +23,11 @@ interface EuPagoWebhookPayload {
   comissao?: string;
   local?: string;
   estado?: string;
-  resposta?: string;
 }
 
 async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
-  console.log('[payment-webhook] Sending confirmation email for order:', orderId);
-  console.log('[payment-webhook] Order details:', orderDetails);
+  console.log('[multibanco-webhook] Sending confirmation email for order:', orderId);
+  console.log('[multibanco-webhook] Order details:', orderDetails);
   
   try {
     const emailHtml = `
@@ -43,7 +42,7 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
       <p>Obrigado pela sua compra!</p>
     `;
 
-    console.log('[payment-webhook] Invoking send-order-email function');
+    console.log('[multibanco-webhook] Invoking send-order-email function');
     const { error: emailError } = await supabase.functions.invoke('send-order-email', {
       body: { 
         orderId,
@@ -53,19 +52,19 @@ async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) 
     });
 
     if (emailError) {
-      console.error('[payment-webhook] Error sending payment confirmation email:', emailError);
+      console.error('[multibanco-webhook] Error sending payment confirmation email:', emailError);
       throw emailError;
     }
     
-    console.log('[payment-webhook] Confirmation email sent successfully');
+    console.log('[multibanco-webhook] Confirmation email sent successfully');
   } catch (error) {
-    console.error('[payment-webhook] Failed to send payment confirmation email:', error);
+    console.error('[multibanco-webhook] Failed to send payment confirmation email:', error);
     throw error;
   }
 }
 
 async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookPayload) {
-  console.log(`[payment-webhook] Updating order ${orderId} with payment details:`, paymentDetails);
+  console.log(`[multibanco-webhook] Updating order ${orderId} with payment details:`, paymentDetails);
   
   try {
     // First get the order details for the email
@@ -76,11 +75,11 @@ async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookP
       .single();
 
     if (orderError) {
-      console.error('[payment-webhook] Error fetching order:', orderError);
+      console.error('[multibanco-webhook] Error fetching order:', orderError);
       throw orderError;
     }
 
-    // For MBWay, estado '0' means success
+    // For Multibanco, estado '0' means success
     const paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
     
     const { error: updateError } = await supabase
@@ -93,18 +92,18 @@ async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookP
       .eq('id', orderId);
 
     if (updateError) {
-      console.error('[payment-webhook] Error updating order status:', updateError);
+      console.error('[multibanco-webhook] Error updating order status:', updateError);
       throw updateError;
     }
 
-    console.log('[payment-webhook] Order status updated successfully');
+    console.log('[multibanco-webhook] Order status updated successfully');
     
     // Only send confirmation email if payment was successful
     if (paymentStatus === 'completed') {
       await sendPaymentConfirmationEmail(orderId, order);
     }
   } catch (error) {
-    console.error('[payment-webhook] Failed to process order update:', error);
+    console.error('[multibanco-webhook] Failed to process order update:', error);
     throw error;
   }
 }
@@ -117,7 +116,7 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    console.log('[payment-webhook] Received webhook request:', {
+    console.log('[multibanco-webhook] Received webhook request:', {
       method: req.method,
       url: url.toString()
     });
@@ -126,7 +125,7 @@ serve(async (req) => {
     
     if (req.method === 'POST') {
       const body = await req.text();
-      console.log('[payment-webhook] POST body:', body);
+      console.log('[multibanco-webhook] POST body:', body);
       
       try {
         payload = JSON.parse(body);
@@ -142,11 +141,11 @@ serve(async (req) => {
       throw new Error(`Unsupported method: ${req.method}`);
     }
 
-    console.log('[payment-webhook] Parsed payload:', payload);
+    console.log('[multibanco-webhook] Parsed payload:', payload);
 
-    // Verify this is a MBWay payment
-    if (payload.mp !== 'MW') {
-      throw new Error('This webhook only handles MBWay payments');
+    // Verify this is a Multibanco payment
+    if (payload.mp !== 'MB') {
+      throw new Error('This webhook only handles Multibanco payments');
     }
 
     const orderId = payload.identificador;
@@ -158,14 +157,15 @@ serve(async (req) => {
       throw new Error('Invalid payment notification: missing transaction ID or amount');
     }
 
-    console.log(`[payment-webhook] Processing MBWay payment for order ${orderId}:`, {
+    console.log(`[multibanco-webhook] Processing Multibanco payment for order ${orderId}:`, {
       transactionId: payload.transacao,
       amount: payload.valor,
       method: payload.mp,
       date: payload.data,
       location: payload.local,
       status: payload.estado,
-      response: payload.resposta
+      entity: payload.entidade,
+      reference: payload.referencia
     });
 
     await updateOrderStatus(orderId, payload);
@@ -180,7 +180,7 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('[payment-webhook] Webhook processing error:', error);
+    console.error('[multibanco-webhook] Webhook processing error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
