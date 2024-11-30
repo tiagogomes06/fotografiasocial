@@ -34,11 +34,11 @@ serve(async (req) => {
     // Create SMTP client
     const client = new SMTPClient({
       connection: {
-        hostname: "fotografiaescolar.duploefeito.com",
+        hostname: "mail.duploefeito.com",
         port: 465,
         tls: true,
         auth: {
-          username: "envio@fotografiaescolar.duploefeito.com",
+          username: "encomendas@duploefeito.com",
           password: smtpPassword,
         },
       },
@@ -84,34 +84,33 @@ serve(async (req) => {
       throw new Error('No email address associated with order');
     }
 
-    // Generate email content for customer
-    console.log('[send-order-email] Generating customer email template...');
-    const customerHtml = createEmailTemplate(order, type);
+    // Generate email content
+    console.log('[send-order-email] Generating email template...');
+    const emailHtml = createEmailTemplate(order, type);
 
     // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
-      from: "envio@fotografiaescolar.duploefeito.com",
+      from: "Fotografia Escolar <encomendas@duploefeito.com>",
       to: order.email,
       subject: type === 'created' ? 
         `Confirmação de Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      html: customerHtml,
+      html: emailHtml,
     });
 
-    // If payment is completed, also send notification to admin
+    // If payment is completed, also send notification to admin emails
     if (type === 'paid') {
-      console.log('[send-order-email] Generating admin notification email...');
-      const adminHtml = createEmailTemplate(order, type, true);
+      console.log('[send-order-email] Sending admin notification emails...');
       
       await client.send({
-        from: "envio@fotografiaescolar.duploefeito.com",
-        to: "envio@fotografiaescolar.duploefeito.com",
+        from: "Fotografia Escolar <encomendas@duploefeito.com>",
+        to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
-        html: adminHtml,
+        html: emailHtml,
       });
       
-      console.log('[send-order-email] Admin notification sent');
+      console.log('[send-order-email] Admin notifications sent');
     }
 
     await client.close();
