@@ -36,24 +36,45 @@ export const createStudent = async (name: string, classId: string, accessCode: s
 
 export const uploadPhoto = async (file: File, studentId: string) => {
   const fileExt = file.name.split('.').pop();
-  const filePath = `${crypto.randomUUID()}.${fileExt}`;
+  const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
-  // Upload to new storage bucket
+  // Upload to Supabase Storage (backup)
   const { error: uploadError } = await supabase.storage
     .from('student_photos')
-    .upload(filePath, file);
+    .upload(fileName, file);
 
   if (uploadError) throw uploadError;
 
-  // Get public URL from new bucket
-  const { data: { publicUrl } } = supabase.storage
-    .from('student_photos')
-    .getPublicUrl(filePath);
+  // Get the file as base64
+  const base64Data = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
 
-  // Create photo record
+  // Upload to FTP
+  const ftpResponse = await fetch('/api/ftp-upload', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      fileData: base64Data,
+      fileName: fileName,
+    }),
+  });
+
+  if (!ftpResponse.ok) {
+    throw new Error('Failed to upload to FTP server');
+  }
+
+  const { ftpUrl } = await ftpResponse.json();
+
+  // Create photo record with FTP URL
   const { data, error } = await supabase
     .from('photos')
-    .insert({ url: publicUrl, student_id: studentId })
+    .insert({ url: ftpUrl, student_id: studentId })
     .select()
     .single();
 
