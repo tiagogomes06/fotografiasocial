@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { FTPClient } from "https://deno.land/x/ftp@v0.0.5/mod.ts";
+import { FTPClient } from "npm:basic-ftp@5.0.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,26 +8,46 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { fileData, fileName } = await req.json();
 
-    const ftp = new FTPClient();
-    await ftp.connect({
-      host: Deno.env.get("FTP_HOST") || "",
-      port: Number(Deno.env.get("FTP_PORT")) || 21,
-      user: Deno.env.get("FTP_USER") || "",
-      password: Deno.env.get("FTP_PASSWORD") || "",
+    const client = new FTPClient();
+    client.ftp.verbose = true; // Enable logging for debugging
+
+    console.log('Connecting to FTP server...');
+    await client.access({
+      host: Deno.env.get("FTP_HOST"),
+      port: Number(Deno.env.get("FTP_PORT")),
+      user: Deno.env.get("FTP_USER"),
+      password: Deno.env.get("FTP_PASSWORD"),
     });
 
+    console.log('Connected to FTP server');
+
     // Convert base64 to Uint8Array
-    const binaryData = Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0));
-    
+    const binaryString = atob(fileData.split(',')[1]);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Create a temporary file
+    const tempFile = await Deno.makeTempFile();
+    await Deno.writeFile(tempFile, bytes);
+
     // Upload to FTP
-    await ftp.uploadFrom(binaryData, `/photos/${fileName}`);
-    await ftp.close();
+    console.log('Uploading file...');
+    await client.uploadFrom(tempFile, `/photos/${fileName}`);
+    console.log('File uploaded successfully');
+
+    // Clean up temp file
+    await Deno.remove(tempFile);
+
+    // Close FTP connection
+    await client.close();
 
     return new Response(
       JSON.stringify({ 
