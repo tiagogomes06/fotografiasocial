@@ -20,24 +20,36 @@ serve(async (req) => {
 
   try {
     console.log('Starting upload process...');
-    const { fileData, fileName } = await req.json();
+    const formData = await req.formData();
+    const file = formData.get('file');
     
-    if (!fileData || !fileName) {
-      console.error('Missing required data:', { hasFileData: !!fileData, hasFileName: !!fileName });
-      throw new Error('Missing required data: fileData or fileName');
+    if (!file || !(file instanceof File)) {
+      console.error('No file provided or invalid file');
+      throw new Error('Missing or invalid file');
     }
 
-    // Convert base64 to file
-    const base64Data = fileData.split(',')[1];
-    const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    const fileName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`;
+    console.log('Generated filename:', fileName);
+
+    // First upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(fileName, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError);
+      throw uploadError;
     }
 
-    // Create temporary file
-    const tempFilePath = await Deno.makeTempFile();
-    await Deno.writeFile(tempFilePath, bytes);
+    console.log('File uploaded to Supabase, getting public URL...');
+    
+    // Get the public URL for FTP upload
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(fileName);
 
     // Connect to FTP and upload
     client = new Client();
@@ -62,12 +74,15 @@ serve(async (req) => {
       console.log('Directory already exists or could not be created:', error);
     }
 
-    // Upload the file directly to FTP
+    // Download from Supabase and upload to FTP
     console.log('Starting FTP upload...');
-    await client.uploadFrom(tempFilePath, `${ftpPath}/${fileName}`);
+    const response = await fetch(publicUrl);
+    const arrayBuffer = await response.arrayBuffer();
     
-    // Clean up temporary file
-    await Deno.remove(tempFilePath);
+    await client.uploadFrom(
+      new Uint8Array(arrayBuffer),
+      `${ftpPath}/${fileName}`
+    );
     
     console.log("File uploaded successfully to FTP");
 
