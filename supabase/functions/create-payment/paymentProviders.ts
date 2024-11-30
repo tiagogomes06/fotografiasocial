@@ -121,17 +121,18 @@ export const createEupagoMultibancoPayment = async (
   console.log('Creating EuPago Multibanco payment for order:', order.id);
 
   const payload = {
-    payment_method: 'multibanco',
-    valor: order.total_amount,
     chave: 'da58-5a0d-2f22-0152-8f6d',
-    id: order.id
+    valor: order.total_amount.toString(),
+    id: order.id,
+    data_inicio: new Date().toISOString().split('T')[0],
+    data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+    per_dup: '0'
   };
 
   try {
-    const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/pagamento/create', {
+    const response = await fetch('https://clientes.eupago.pt/clientes/rest_api/multibanco/create', {
       method: 'POST',
       headers: {
-        'Authorization': 'ApiKey da58-5a0d-2f22-0152-8f6d',
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
@@ -146,7 +147,16 @@ export const createEupagoMultibancoPayment = async (
 
     const result = await response.json();
     console.log('EuPago Multibanco success response:', result);
-    return result;
+    
+    if (!result.sucesso) {
+      throw new Error(`EuPago error: ${result.resposta || 'Unknown error'}`);
+    }
+
+    return {
+      reference: result.referencia,
+      entity: result.entidade,
+      amount: Number(order.total_amount)
+    };
   } catch (error) {
     console.error('Error processing EuPago Multibanco payment:', error);
     throw error;

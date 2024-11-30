@@ -137,22 +137,21 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
             });
           }
         } else if (paymentMethod === "multibanco") {
-          const message = `
-            Referência Multibanco:
-            Entidade: ${payment.entity}
-            Referência: ${payment.reference}
-            Valor: ${payment.amount}€
-          `;
-          toast.info(message, {
-            duration: 20000
-          });
-          
           if (payment.error) {
             toast.error(`Erro Multibanco: ${payment.error}`, {
               duration: 10000
             });
+          } else {
+            navigate("/payment-confirmation", {
+              state: {
+                paymentDetails: {
+                  entity: payment.entity,
+                  reference: payment.reference,
+                  amount: payment.amount
+                }
+              }
+            });
           }
-          navigate("/");
         }
       }
     } catch (error) {
