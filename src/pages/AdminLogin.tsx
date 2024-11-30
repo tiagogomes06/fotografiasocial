@@ -19,9 +19,9 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Admin Login</h1>
+          <h1 className="text-2xl font-bold">Duplo Efeito Administração</h1>
           <p className="text-muted-foreground mt-2">
-            Please sign in to access the admin panel
+            Por favor, faça login para aceder ao painel de administração
           </p>
         </div>
         <div className="bg-card p-6 rounded-lg shadow-lg">
@@ -41,6 +41,18 @@ const AdminLogin = () => {
               },
             }}
             providers={[]}
+            localization={{
+              variables: {
+                sign_in: {
+                  email_label: "Email",
+                  password_label: "Password",
+                  button_label: "Entrar",
+                  loading_button_label: "A entrar...",
+                },
+              },
+            }}
+            view="sign_in"
+            showLinks={false}
           />
         </div>
       </div>
