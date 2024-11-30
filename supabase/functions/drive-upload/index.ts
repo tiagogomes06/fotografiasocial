@@ -5,6 +5,76 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+async function getAccessToken() {
+  const serviceAccount = {
+    "type": "service_account",
+    "project_id": Deno.env.get('GOOGLE_PROJECT_ID'),
+    "private_key_id": Deno.env.get('GOOGLE_PRIVATE_KEY_ID'),
+    "private_key": Deno.env.get('GOOGLE_PRIVATE_KEY').replace(/\\n/g, '\n'),
+    "client_email": Deno.env.get('GOOGLE_CLIENT_EMAIL'),
+    "client_id": Deno.env.get('GOOGLE_CLIENT_ID'),
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": Deno.env.get('GOOGLE_CERT_URL')
+  };
+
+  // Create JWT
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+  };
+
+  const now = Math.floor(Date.now() / 1000);
+  const claim = {
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    aud: serviceAccount.token_uri,
+    exp: now + 3600,
+    iat: now,
+  };
+
+  // Encode header and claim
+  const encoder = new TextEncoder();
+  const headerB64 = btoa(JSON.stringify(header));
+  const claimB64 = btoa(JSON.stringify(claim));
+
+  // Create signature
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    new TextEncoder().encode(serviceAccount.private_key),
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    encoder.encode(`${headerB64}.${claimB64}`)
+  );
+
+  const jwt = `${headerB64}.${claimB64}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
+
+  // Exchange JWT for access token
+  const tokenResponse = await fetch(serviceAccount.token_uri, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+
+  const { access_token } = await tokenResponse.json();
+  return access_token;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,6 +89,9 @@ serve(async (req) => {
     }
 
     console.log(`Starting upload for file: ${fileName}`);
+
+    // Get access token
+    const accessToken = await getAccessToken();
 
     // Remove data URL prefix and convert to binary
     const base64Data = fileData.split(',')[1];
@@ -59,7 +132,7 @@ serve(async (req) => {
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('GOOGLE_DRIVE_API_KEY')}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': `multipart/related; boundary=${boundary}`,
           'Content-Length': multipartRequestBody.length.toString(),
         },
