@@ -113,7 +113,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         >
           {/* Logo */}
           <img 
-            src="/logo.png" 
+            src="https://fotografiaescolar.duploefeito.com/logo.jpg"
             alt="Duplo Efeito" 
             className="w-32 h-auto mb-4"
             onError={(e) => {
