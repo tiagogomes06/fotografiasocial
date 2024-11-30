@@ -53,28 +53,24 @@ export const uploadPhoto = async (file: File, studentId: string) => {
   });
 
   // Upload to FTP
-  const ftpResponse = await fetch('/api/ftp-upload', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
+  const ftpResponse = await supabase.functions.invoke('ftp-upload', {
+    body: {
       fileData: base64Data,
       fileName: fileName,
-    }),
+    },
   });
 
-  if (!ftpResponse.ok) {
+  if (ftpResponse.error) {
     throw new Error('Failed to upload to FTP server');
   }
-
-  const { ftpUrl } = await ftpResponse.json();
 
   // Create photo record with FTP URL
   const { data, error } = await supabase
     .from('photos')
-    .insert({ url: ftpUrl, student_id: studentId })
+    .insert({ 
+      url: ftpResponse.data.url, 
+      student_id: studentId 
+    })
     .select()
     .single();
 
