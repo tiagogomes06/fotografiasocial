@@ -18,7 +18,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -64,14 +63,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
 
   const handleClick = async () => {
     setIsOpen(true);
-    
-    // Wait for logo to load before generating PNG
-    const img = new Image();
-    img.onload = () => {
-      setLogoLoaded(true);
-      setTimeout(generateQRCodePNG, 500);
-    };
-    img.src = "https://fotografiaescolar.duploefeito.com/logo.jpg";
+    setTimeout(generateQRCodePNG, 500);
   };
 
   const generateQRCodePNG = async () => {
@@ -82,8 +74,14 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
       const canvas = await html2canvas(container, {
         backgroundColor: "white",
         scale: 2,
-        useCORS: true, // Important for loading cross-origin images
-        allowTaint: true, // Allow loading of cross-origin images
+        useCORS: true,
+        allowTaint: true,
+        onclone: function(clonedDoc) {
+          const img = clonedDoc.querySelector('img');
+          if (img) {
+            img.crossOrigin = "anonymous";
+          }
+        }
       });
 
       canvas.toBlob((blob) => {
@@ -123,10 +121,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             alt="Duplo Efeito" 
             className="w-32 h-auto mb-4"
             crossOrigin="anonymous"
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              img.style.display = 'none';
-            }}
           />
 
           {schoolInfo && (
@@ -143,15 +137,14 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
               alt={studentName}
               className="w-32 h-32 object-cover rounded-lg"
               crossOrigin="anonymous"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.display = 'none';
-              }}
             />
           )}
 
           <QRCodeSVG value={qrValue} size={256} />
-          <p className="mt-2 text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
+            <p className="text-sm text-muted-foreground">Site para acesso: fotografiaescolar.duploefeito.com</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
