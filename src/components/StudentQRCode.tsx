@@ -13,7 +13,7 @@ interface StudentQRCodeProps {
 
 const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProps) => {
   const qrValue = `${window.location.origin}/access?code=${accessCode}`;
-  const qrRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
 
@@ -45,7 +45,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
           className: data.classes.name
         });
 
-        // Get a random photo if available
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
           setRandomPhoto(data.photos[randomIndex].url);
@@ -56,28 +55,31 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
     fetchStudentInfo();
   }, [studentId]);
 
-  const downloadQRCode = () => {
-    const svg = qrRef.current;
-    if (!svg) return;
+  const downloadQRCode = async () => {
+    const container = containerRef.current;
+    if (!container) return;
 
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    try {
+      // Create a canvas with the same dimensions as the container
+      const canvas = document.createElement("canvas");
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    // Set canvas size to match SVG
-    canvas.width = svg.width.baseVal.value;
-    canvas.height = svg.height.baseVal.value;
+      // Set white background
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Create a Blob from the SVG data
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      // Convert the container to a data URL using html2canvas
+      const html2canvas = (await import("html2canvas")).default;
+      const canvasImage = await html2canvas(container, {
+        backgroundColor: "white",
+        scale: 2, // Higher quality
+      });
 
-    // Create an Image object to draw the SVG to canvas
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0);
-      
-      canvas.toBlob((blob) => {
+      // Create download link
+      canvasImage.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -87,9 +89,10 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      });
-    };
-    img.src = URL.createObjectURL(svgBlob);
+      }, "image/png");
+    } catch (error) {
+      console.error("Error generating image:", error);
+    }
   };
 
   return (
@@ -104,7 +107,10 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         <DialogHeader>
           <DialogTitle>Código QR para {studentName}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center justify-center p-6 space-y-4">
+        <div 
+          ref={containerRef}
+          className="flex flex-col items-center justify-center p-6 space-y-4 bg-white"
+        >
           {/* Logo */}
           <img 
             src="/logo.png" 
@@ -131,7 +137,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
           )}
 
           {/* QR Code */}
-          <QRCodeSVG ref={qrRef} value={qrValue} size={256} />
+          <QRCodeSVG value={qrValue} size={256} />
           <p className="mt-2 text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
           
           <Button 
