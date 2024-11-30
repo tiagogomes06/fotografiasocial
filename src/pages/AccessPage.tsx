@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const AccessPage = () => {
   const [searchParams] = useSearchParams();
@@ -16,19 +17,27 @@ const AccessPage = () => {
         return;
       }
 
-      const { data: student, error: studentError } = await supabase
-        .from("students")
-        .select("id")
-        .eq("access_code", code)
-        .single();
+      try {
+        const { data: student, error: studentError } = await supabase
+          .from("students")
+          .select("id")
+          .eq("access_code", code)
+          .single();
 
-      if (studentError || !student) {
-        setError("Código de acesso inválido");
-        return;
+        if (studentError || !student) {
+          setError("Código de acesso inválido");
+          return;
+        }
+
+        // Store the student ID in localStorage
+        localStorage.setItem("studentId", student.id);
+        
+        // Redirect to store with the student ID
+        navigate(`/store`);
+      } catch (error) {
+        console.error("Error verifying access code:", error);
+        setError("Erro ao verificar código de acesso");
       }
-
-      // Redirect to store with the student ID
-      navigate(`/store?studentId=${student.id}`);
     };
 
     verifyAccessCode();
