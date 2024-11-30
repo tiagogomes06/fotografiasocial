@@ -76,10 +76,11 @@ serve(async (req) => {
     // Download from Supabase URL and upload to FTP
     console.log('Starting FTP upload...');
     const response = await fetch(publicUrl);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Use uploadFrom with a Buffer instead of Uint8Array
     await client.uploadFrom(
-      new Uint8Array(arrayBuffer), 
+      Buffer.from(arrayBuffer),
       `/photos/${fileName}`
     );
     console.log("File uploaded successfully to FTP");
