@@ -19,9 +19,16 @@ const AccessPage = () => {
       }
 
       try {
+        // Fetch student data including photos
         const { data: student, error } = await supabase
           .from("students")
-          .select("id")
+          .select(`
+            id,
+            name,
+            photos (
+              url
+            )
+          `)
           .eq("access_code", code)
           .single();
 
@@ -34,8 +41,23 @@ const AccessPage = () => {
         // Store the student ID in localStorage
         localStorage.setItem("studentId", student.id);
         
-        // Redirect to store
-        navigate("/store");
+        // Get photo URLs
+        const photoUrls = student.photos.map((photo: { url: string }) => {
+          const { data: { publicUrl } } = supabase.storage
+            .from('photos')
+            .getPublicUrl(photo.url.split('/').pop() || '');
+          return publicUrl;
+        });
+
+        // Redirect to photo gallery with the photos and student name
+        navigate("/", { 
+          state: { 
+            photos: photoUrls,
+            studentName: student.name,
+            studentId: student.id,
+            fromQR: true 
+          } 
+        });
       } catch (error) {
         console.error("Error verifying access code:", error);
         toast.error("Erro ao verificar código de acesso");
