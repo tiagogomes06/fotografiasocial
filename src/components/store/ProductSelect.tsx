@@ -40,7 +40,7 @@ const ProductSelect = ({
                 </p>
                 
                 {selectedProduct === product.id && (
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       type="button"
                       variant="outline"
