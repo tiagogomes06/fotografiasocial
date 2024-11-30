@@ -20,22 +20,42 @@ serve(async (req) => {
 
   try {
     console.log('Starting upload process...');
-    const formData = await req.formData();
-    const file = formData.get('file');
     
-    if (!file || !(file instanceof File)) {
-      console.error('No file provided or invalid file');
-      throw new Error('Missing or invalid file');
+    let file;
+    let fileName;
+    const contentType = req.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const { fileData, fileName: providedFileName } = await req.json();
+      if (!fileData || !providedFileName) {
+        throw new Error('Missing required data: fileData or fileName');
+      }
+      fileName = providedFileName;
+      
+      // Convert base64 to blob
+      const base64Data = fileData.split(',')[1];
+      const byteString = atob(base64Data);
+      const byteArray = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i++) {
+        byteArray[i] = byteString.charCodeAt(i);
+      }
+      file = new Blob([byteArray]);
+    } else {
+      const formData = await req.formData();
+      file = formData.get('file');
+      if (!file || !(file instanceof File)) {
+        throw new Error('Missing or invalid file');
+      }
+      fileName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`;
     }
 
-    const fileName = `${crypto.randomUUID()}.${file.name.split('.').pop()}`;
     console.log('Generated filename:', fileName);
 
-    // First upload to Supabase Storage
+    // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('photos')
       .upload(fileName, file, {
-        contentType: file.type,
+        contentType: file instanceof File ? file.type : 'image/jpeg',
         upsert: false
       });
 
@@ -46,7 +66,7 @@ serve(async (req) => {
 
     console.log('File uploaded to Supabase, getting public URL...');
     
-    // Get the public URL for FTP upload
+    // Get the public URL
     const { data: { publicUrl } } = supabase.storage
       .from('photos')
       .getPublicUrl(fileName);
