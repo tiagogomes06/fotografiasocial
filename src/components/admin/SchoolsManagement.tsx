@@ -1,11 +1,11 @@
-import { SchoolsSection } from "./SchoolsSection";
-import { ClassesSection } from "./ClassesSection";
-import { StudentsSection } from "./StudentsSection";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { School, Class } from "@/types/admin";
+import { SchoolsSection } from "./SchoolsSection";
+import { ClassesSection } from "./ClassesSection";
+import { StudentsSection } from "./StudentsSection";
 
 export const SchoolsManagement = () => {
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -31,7 +31,7 @@ export const SchoolsManagement = () => {
 
   const classMutation = useMutation({
     mutationFn: async (values: { className: string }) => {
-      if (!selectedSchool) throw new Error("No school selected");
+      if (!selectedSchool) throw new Error("Nenhuma escola selecionada");
       const { data, error } = await supabase
         .from('classes')
         .insert([{ name: values.className, school_id: selectedSchool.id }])
@@ -75,7 +75,7 @@ export const SchoolsManagement = () => {
 
   const studentMutation = useMutation({
     mutationFn: async (values: { studentName: string }) => {
-      if (!selectedClass) throw new Error("No class selected");
+      if (!selectedClass) throw new Error("Nenhuma turma selecionada");
       const accessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       const { data, error } = await supabase
         .from('students')
@@ -101,7 +101,7 @@ export const SchoolsManagement = () => {
       return data;
     },
     onSuccess: (newStudent) => {
-      toast.success("Estudante adicionado com sucesso");
+      toast.success("Aluno adicionado com sucesso");
       if (selectedClass && selectedSchool) {
         const updatedClass = {
           ...selectedClass,
@@ -120,7 +120,7 @@ export const SchoolsManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['schools'] });
     },
     onError: (error) => {
-      toast.error("Erro ao adicionar estudante");
+      toast.error("Erro ao adicionar aluno");
       console.error(error);
     },
   });

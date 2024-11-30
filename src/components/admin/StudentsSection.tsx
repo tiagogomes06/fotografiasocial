@@ -34,22 +34,22 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
     <section className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">
-          Students in {selectedClass.name}
+          Alunos da Turma {selectedClass.name}
         </h2>
         <div className="space-x-2">
           <Button variant="outline" onClick={onBack}>
-            Back to Classes
+            Voltar às Turmas
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Student
+                Adicionar Aluno
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
+                <DialogTitle>Adicionar Novo Aluno</DialogTitle>
               </DialogHeader>
               <Form {...studentForm}>
                 <form onSubmit={studentForm.handleSubmit(handleSubmit)} className="space-y-4">
@@ -58,14 +58,14 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
                     name="studentName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Student Name</FormLabel>
+                        <FormLabel>Nome do Aluno</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter student name" {...field} />
+                          <Input placeholder="Introduza o nome do aluno" {...field} />
                         </FormControl>
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">Add Student</Button>
+                  <Button type="submit" className="w-full">Adicionar Aluno</Button>
                 </form>
               </Form>
             </DialogContent>
@@ -76,10 +76,10 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Student Name</TableHead>
-            <TableHead>Access Code</TableHead>
-            <TableHead>Photo</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Nome do Aluno</TableHead>
+            <TableHead>Código de Acesso</TableHead>
+            <TableHead>Fotografia</TableHead>
+            <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -95,7 +95,7 @@ export const StudentsSection = ({ selectedClass, onAddStudent, onBack, onPhotoUp
                     className="h-10 w-10 object-cover rounded"
                   />
                 ) : (
-                  "No photo"
+                  "Sem fotografia"
                 )}
               </TableCell>
               <TableCell>

@@ -33,22 +33,22 @@ export const ClassesSection = ({ school, onAddClass, onSelectClass, onBack }: Cl
     <section className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">
-          Classes for {school.name}
+          Turmas de {school.name}
         </h2>
         <div className="space-x-2">
           <Button variant="outline" onClick={onBack}>
-            Back to Schools
+            Voltar às Escolas
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Class
+                Adicionar Turma
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Class</DialogTitle>
+                <DialogTitle>Adicionar Nova Turma</DialogTitle>
               </DialogHeader>
               <Form {...classForm}>
                 <form onSubmit={classForm.handleSubmit(handleSubmit)} className="space-y-4">
@@ -57,14 +57,14 @@ export const ClassesSection = ({ school, onAddClass, onSelectClass, onBack }: Cl
                     name="className"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Class Name</FormLabel>
+                        <FormLabel>Nome da Turma</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter class name" {...field} />
+                          <Input placeholder="Introduza o nome da turma" {...field} />
                         </FormControl>
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">Add Class</Button>
+                  <Button type="submit" className="w-full">Adicionar Turma</Button>
                 </form>
               </Form>
             </DialogContent>
@@ -75,9 +75,9 @@ export const ClassesSection = ({ school, onAddClass, onSelectClass, onBack }: Cl
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Class Name</TableHead>
-            <TableHead>Students</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Nome da Turma</TableHead>
+            <TableHead>Alunos</TableHead>
+            <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -92,7 +92,7 @@ export const ClassesSection = ({ school, onAddClass, onSelectClass, onBack }: Cl
                   onClick={() => onSelectClass(cls)}
                 >
                   <Users className="h-4 w-4 mr-1" />
-                  Manage Students
+                  Gerir Alunos
                 </Button>
               </TableCell>
             </TableRow>
