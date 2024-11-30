@@ -1,4 +1,4 @@
-import { OrderDetails } from './types';
+import { OrderDetails } from "./types.ts";
 
 export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAdmin = false) => {
   const title = type === 'created' ? 
@@ -57,7 +57,7 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
               <p style="margin: 4px 0; font-weight: 600; color: #374151;">${item.products.name}</p>
               <p style="margin: 4px 0; color: #6b7280;">Quantidade: ${item.quantity}</p>
               <p style="margin: 4px 0; color: #6b7280;">Preço: ${item.price_at_time}€</p>
-              <a href="${item.photos.url.replace(/([^.]+)([^.]+)$/, '$1.$2')}" 
+              <a href="${item.photos.url}" 
                  style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 8px; font-weight: 500;">
                 Ver Foto
               </a>
