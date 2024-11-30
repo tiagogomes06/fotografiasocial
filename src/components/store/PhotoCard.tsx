@@ -45,48 +45,48 @@ const PhotoCard = ({
         
         {isSelected && (
           <div 
-            className="animate-fade-in relative z-[60]" 
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
+            className="animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
           >
             <h4 className="text-sm font-medium mb-2 text-gray-700">Escolha um produto:</h4>
-            <Select
-              value={selectedProduct}
-              onValueChange={(value) => {
-                onProductSelect(value);
-              }}
-            >
-              <SelectTrigger 
-                className="w-full bg-white"
-                onClick={(e) => e.stopPropagation()}
+            <div className="relative">
+              <Select
+                value={selectedProduct}
+                onValueChange={(value) => {
+                  onProductSelect(value);
+                }}
               >
-                <SelectValue placeholder="Selecione um produto" />
-              </SelectTrigger>
-              <SelectContent 
-                className="bg-white border shadow-xl z-[100] relative"
-                onPointerDownOutside={(e) => e.preventDefault()}
-                position="popper"
-                sideOffset={5}
-              >
-                <div 
-                  className="bg-white rounded-lg divide-y divide-gray-100"
+                <SelectTrigger 
+                  className="w-full bg-white"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {products.map((product) => (
-                    <SelectItem 
-                      key={product.id} 
-                      value={product.id}
-                      className="cursor-pointer hover:bg-gray-100 relative z-[100] bg-white"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {product.name} - {product.price}€
-                    </SelectItem>
-                  ))}
-                </div>
-              </SelectContent>
-            </Select>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent 
+                  className="fixed bg-white border shadow-xl w-[var(--radix-select-trigger-width)] max-h-[--radix-select-content-available-height]"
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                  position="popper"
+                  sideOffset={5}
+                >
+                  <div 
+                    className="bg-white rounded-lg divide-y divide-gray-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {products.map((product) => (
+                      <SelectItem 
+                        key={product.id} 
+                        value={product.id}
+                        className="cursor-pointer hover:bg-gray-100 bg-white"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {product.name} - {product.price}€
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
       </CardContent>
