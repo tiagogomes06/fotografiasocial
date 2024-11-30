@@ -65,9 +65,11 @@ serve(async (req) => {
       secure: false
     });
 
-    // Ensure /photos directory exists
+    const ftpPath = `/home/tiagogom/fotografiaescolar.duploefeito.com/fotos_alojamento/photos`;
+    
+    // Ensure directory exists
     try {
-      await client.ensureDir("/photos");
+      await client.ensureDir(ftpPath);
       console.log("Photos directory confirmed");
     } catch (error) {
       console.log('Directory already exists or could not be created:', error);
@@ -76,7 +78,7 @@ serve(async (req) => {
     // Upload directly using the binary data
     console.log('Starting FTP upload...');
     const tempFile = new Uint8Array(bytes);
-    await client.uploadFrom(tempFile, `/photos/${fileName}`);
+    await client.uploadFrom(tempFile, `${ftpPath}/${fileName}`);
     console.log("File uploaded successfully to FTP");
 
     // Delete temporary file from Supabase Storage after 3 seconds
