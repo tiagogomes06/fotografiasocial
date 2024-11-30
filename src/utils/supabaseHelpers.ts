@@ -38,16 +38,16 @@ export const uploadPhoto = async (file: File, studentId: string) => {
   const fileExt = file.name.split('.').pop();
   const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
-  // Upload to storage
+  // Upload to new storage bucket
   const { error: uploadError } = await supabase.storage
-    .from('photos')
+    .from('student_photos')
     .upload(filePath, file);
 
   if (uploadError) throw uploadError;
 
-  // Get public URL
+  // Get public URL from new bucket
   const { data: { publicUrl } } = supabase.storage
-    .from('photos')
+    .from('student_photos')
     .getPublicUrl(filePath);
 
   // Create photo record
