@@ -77,10 +77,10 @@ serve(async (req) => {
     console.log('Starting FTP upload...');
     const response = await fetch(publicUrl);
     const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     
-    // Use uploadFrom with a Buffer instead of Uint8Array
     await client.uploadFrom(
-      Buffer.from(arrayBuffer),
+      uint8Array,
       `/photos/${fileName}`
     );
     console.log("File uploaded successfully to FTP");
