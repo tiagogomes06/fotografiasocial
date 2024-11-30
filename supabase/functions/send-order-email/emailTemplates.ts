@@ -38,7 +38,7 @@ export const createEmailTemplate = (
         </div>
         <div>
           <p style="color: #64748b; font-size: 0.875rem;">Montante</p>
-          <p style="color: #0f172a; font-size: 1.25rem; font-weight: 600;">${paymentDetails.amount.toFixed(2)}€</p>
+          <p style="color: #0f172a; font-size: 1.25rem; font-weight: 600;">${Number(paymentDetails.amount).toFixed(2)}€</p>
         </div>
       </div>
       <div style="background-color: #fff7ed; border-radius: 0.375rem; padding: 1rem; margin-top: 1rem;">
@@ -76,7 +76,7 @@ export const createEmailTemplate = (
 
     <div style="margin-bottom: 1rem;">
       <p style="margin: 0.5rem 0;"><strong style="color: #374151;">Método de Pagamento:</strong> ${order.payment_method}</p>
-      <p style="margin: 0.5rem 0;"><strong style="color: #374151;">Método de Envio:</strong> ${order.shipping_methods?.name} ${order.shipping_methods?.price ? `(${order.shipping_methods.price.toFixed(2)}€)` : '(Grátis)'}</p>
+      <p style="margin: 0.5rem 0;"><strong style="color: #374151;">Método de Envio:</strong> ${order.shipping_methods?.name} ${order.shipping_methods?.price ? `(${Number(order.shipping_methods.price).toFixed(2)}€)` : '(Grátis)'}</p>
     </div>
   </div>
 
@@ -88,7 +88,7 @@ export const createEmailTemplate = (
         <div style="padding: 1rem; background-color: #f9fafb; border-radius: 0.5rem;">
           <p style="margin: 0.25rem 0; font-weight: 600; color: #374151;">${item.products.name}</p>
           <p style="margin: 0.25rem 0; color: #4b5563;">Quantidade: ${item.quantity}</p>
-          <p style="margin: 0.25rem 0; color: #4b5563;">Preço: ${item.price_at_time.toFixed(2)}€</p>
+          <p style="margin: 0.25rem 0; color: #4b5563;">Preço: ${Number(item.price_at_time).toFixed(2)}€</p>
           <a href="${item.photos.url}" style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 0.5rem; font-weight: 500;">Ver Foto</a>
         </div>
       `).join('')}
@@ -97,15 +97,15 @@ export const createEmailTemplate = (
     <div style="margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="color: #4b5563;">Subtotal:</span>
-        <span style="font-weight: 500;">${subtotal.toFixed(2)}€</span>
+        <span style="font-weight: 500;">${Number(subtotal).toFixed(2)}€</span>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
         <span style="color: #4b5563;">Portes de Envio:</span>
-        <span style="font-weight: 500;">${(order.shipping_methods?.price || 0).toFixed(2)}€</span>
+        <span style="font-weight: 500;">${Number(order.shipping_methods?.price || 0).toFixed(2)}€</span>
       </div>
       <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb;">
         <span style="font-weight: 600; color: #111827;">Total:</span>
-        <span style="font-weight: 600; color: #111827;">${order.total_amount.toFixed(2)}€</span>
+        <span style="font-weight: 600; color: #111827;">${Number(order.total_amount).toFixed(2)}€</span>
       </div>
     </div>
   </div>
