@@ -2,9 +2,6 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,26 +9,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Pencil } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { ProductForm } from "./ProductForm";
+import { ProductsTable } from "./ProductsTable";
 
 export const ProductsManagement = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: "",
-    image_url: "",
-  });
 
   const queryClient = useQueryClient();
 
@@ -69,20 +54,9 @@ export const ProductsManagement = () => {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutation.mutate({
-      name: formData.name,
-      description: formData.description,
-      price: Number(formData.price),
-      image_url: formData.image_url,
-    });
-  };
-
   const handleClose = () => {
     setIsOpen(false);
     setEditingProduct(null);
-    setFormData({ name: "", description: "", price: "", image_url: "" });
   };
 
   const handleEdit = (product: any) => {
@@ -112,101 +86,21 @@ export const ProductsManagement = () => {
                 {editingProduct ? "Editar Produto" : "Adicionar Produto"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image_url">URL da Imagem</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  placeholder="https://exemplo.com/imagem.jpg"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Preço (€)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {editingProduct ? "Atualizar" : "Adicionar"}
-              </Button>
-            </form>
+            <ProductForm
+              initialData={editingProduct ? {
+                name: editingProduct.name,
+                description: editingProduct.description || "",
+                price: editingProduct.price.toString(),
+                image_url: editingProduct.image_url || "",
+              } : undefined}
+              onSubmit={mutation.mutate}
+              buttonText={editingProduct ? "Atualizar" : "Adicionar"}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Imagem</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Descrição</TableHead>
-            <TableHead>Preço</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell>
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="h-10 w-10 object-cover rounded"
-                  />
-                ) : (
-                  "Sem imagem"
-                )}
-              </TableCell>
-              <TableCell>{product.name}</TableCell>
-              <TableCell>{product.description}</TableCell>
-              <TableCell>{product.price}€</TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(product)}
-                >
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Editar
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <ProductsTable products={products} onEdit={handleEdit} />
     </div>
   );
 };
