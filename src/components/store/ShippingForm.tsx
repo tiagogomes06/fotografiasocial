@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
 
 interface ShippingFormProps {
   formData: {
@@ -34,10 +33,10 @@ const ShippingForm = ({
   isPickupMethod,
 }: ShippingFormProps) => {
   return (
-    <Card className="p-4 md:p-6 space-y-4">
+    <div className="space-y-6">
       <h2 className="text-xl md:text-2xl font-bold">Dados de Envio</h2>
       
-      <div className="grid gap-4">
+      <div className="space-y-6">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome</Label>
@@ -47,7 +46,6 @@ const ShippingForm = ({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="bg-white"
             />
           </div>
           
@@ -60,7 +58,6 @@ const ShippingForm = ({
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
-              className="bg-white"
             />
           </div>
         </div>
@@ -74,14 +71,13 @@ const ShippingForm = ({
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               required
-              className="bg-white"
             />
           </div>
 
           <div className="space-y-2">
             <Label>Método de Envio</Label>
             <Select value={shippingMethod} onValueChange={setShippingMethod}>
-              <SelectTrigger className="bg-white">
+              <SelectTrigger>
                 <SelectValue placeholder="Selecione o método de envio" />
               </SelectTrigger>
               <SelectContent>
@@ -105,7 +101,6 @@ const ShippingForm = ({
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required={!isPickupMethod}
-                className="bg-white"
               />
             </div>
 
@@ -118,7 +113,6 @@ const ShippingForm = ({
                   value={formData.postalCode}
                   onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                   required={!isPickupMethod}
-                  className="bg-white"
                 />
               </div>
 
@@ -130,14 +124,13 @@ const ShippingForm = ({
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   required={!isPickupMethod}
-                  className="bg-white"
                 />
               </div>
             </div>
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
