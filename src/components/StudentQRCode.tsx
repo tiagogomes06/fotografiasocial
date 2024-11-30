@@ -18,6 +18,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -64,31 +65,41 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   const handleClick = async () => {
     setIsOpen(true);
     
-    setTimeout(async () => {
-      const container = containerRef.current;
-      if (!container) return;
+    // Wait for logo to load before generating PNG
+    const img = new Image();
+    img.onload = () => {
+      setLogoLoaded(true);
+      setTimeout(generateQRCodePNG, 500);
+    };
+    img.src = "https://fotografiaescolar.duploefeito.com/logo.jpg";
+  };
 
-      try {
-        const canvas = await html2canvas(container, {
-          backgroundColor: "white",
-          scale: 2,
-        });
+  const generateQRCodePNG = async () => {
+    const container = containerRef.current;
+    if (!container) return;
 
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `qrcode-${studentName.toLowerCase().replace(/\s+/g, '-')}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, "image/png");
-      } catch (error) {
-        console.error("Error generating image:", error);
-      }
-    }, 500);
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: "white",
+        scale: 2,
+        useCORS: true, // Important for loading cross-origin images
+        allowTaint: true, // Allow loading of cross-origin images
+      });
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `qrcode-${studentName.toLowerCase().replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    } catch (error) {
+      console.error("Error generating image:", error);
+    }
   };
 
   return (
@@ -111,6 +122,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             src="https://fotografiaescolar.duploefeito.com/logo.jpg"
             alt="Duplo Efeito" 
             className="w-32 h-auto mb-4"
+            crossOrigin="anonymous"
             onError={(e) => {
               const img = e.target as HTMLImageElement;
               img.style.display = 'none';
@@ -130,6 +142,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
               src={randomPhoto} 
               alt={studentName}
               className="w-32 h-32 object-cover rounded-lg"
+              crossOrigin="anonymous"
               onError={(e) => {
                 const img = e.target as HTMLImageElement;
                 img.style.display = 'none';
