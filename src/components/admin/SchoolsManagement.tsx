@@ -37,7 +37,7 @@ export const SchoolsManagement = () => {
   );
 };
 
-async function fetchSchools() {
+async function fetchSchools(): Promise<School[]> {
   const { data, error } = await supabase
     .from('schools')
     .select(`
@@ -47,11 +47,13 @@ async function fetchSchools() {
       classes (
         id,
         name,
+        school_id,
         created_at,
         students (
           id,
           name,
           access_code,
+          class_id,
           created_at,
           photos (
             id,
@@ -62,7 +64,18 @@ async function fetchSchools() {
     `);
 
   if (error) throw error;
-  return data || [];
+
+  // Transform the data to match our types
+  return (data || []).map(school => ({
+    ...school,
+    classes: school.classes.map(cls => ({
+      ...cls,
+      students: cls.students.map(student => ({
+        ...student,
+        photoUrl: student.photos?.[0]?.url // Add photoUrl from the first photo
+      }))
+    }))
+  }));
 }
 
 async function createSchool(name: string) {

@@ -1,16 +1,16 @@
 export interface School {
   id: string;
   name: string;
+  created_at: string;
   classes: Class[];
-  created_at?: string;
 }
 
 export interface Class {
   id: string;
   name: string;
   school_id: string;
+  created_at: string;
   students: Student[];
-  created_at?: string;
 }
 
 export interface Student {
@@ -18,8 +18,9 @@ export interface Student {
   name: string;
   access_code: string;
   class_id: string;
+  created_at: string;
   photoUrl?: string;
-  created_at?: string;
+  photos?: { id: string; url: string; }[];
 }
 
 export interface Product {
