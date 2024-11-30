@@ -1,7 +1,7 @@
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { QrCode, Download } from "lucide-react";
+import { QrCode } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,53 +47,18 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
 
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
-          setRandomPhoto(data.photos[randomIndex].url);
+          const photoUrl = data.photos[randomIndex].url;
+          // Get the public URL for the photo from Supabase Storage
+          const { data: publicUrl } = supabase.storage
+            .from('photos')
+            .getPublicUrl(photoUrl.split('/').pop() || '');
+          setRandomPhoto(publicUrl.publicUrl);
         }
       }
     };
 
     fetchStudentInfo();
   }, [studentId]);
-
-  const downloadQRCode = async () => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    try {
-      // Create a canvas with the same dimensions as the container
-      const canvas = document.createElement("canvas");
-      canvas.width = container.offsetWidth;
-      canvas.height = container.offsetHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Set white background
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Convert the container to a data URL using html2canvas
-      const html2canvas = (await import("html2canvas")).default;
-      const canvasImage = await html2canvas(container, {
-        backgroundColor: "white",
-        scale: 2, // Higher quality
-      });
-
-      // Create download link
-      canvasImage.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `qrcode-${studentName.toLowerCase().replace(/\s+/g, '-')}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, "image/png");
-    } catch (error) {
-      console.error("Error generating image:", error);
-    }
-  };
 
   return (
     <Dialog>
@@ -116,6 +81,10 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             src="/logo.png" 
             alt="Duplo Efeito" 
             className="w-32 h-auto mb-4"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.style.display = 'none';
+            }}
           />
 
           {/* School and Class Info */}
@@ -133,21 +102,16 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
               src={randomPhoto} 
               alt={studentName}
               className="w-32 h-32 object-cover rounded-lg"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.style.display = 'none';
+              }}
             />
           )}
 
           {/* QR Code */}
           <QRCodeSVG value={qrValue} size={256} />
           <p className="mt-2 text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
-          
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={downloadQRCode}
-          >
-            <Download className="h-4 w-4 mr-1" />
-            Descarregar Código QR
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
