@@ -45,7 +45,7 @@ const PhotoCard = ({
         
         {isSelected && (
           <div 
-            className="animate-fade-in relative z-50" 
+            className="animate-fade-in relative z-[60]" 
             onClick={(e) => {
               e.stopPropagation();
             }}
@@ -64,17 +64,22 @@ const PhotoCard = ({
                 <SelectValue placeholder="Selecione um produto" />
               </SelectTrigger>
               <SelectContent 
-                className="bg-white/95 backdrop-blur-md border shadow-lg z-50 relative"
+                className="bg-white border shadow-xl z-[100] relative"
                 onPointerDownOutside={(e) => e.preventDefault()}
                 position="popper"
                 sideOffset={5}
               >
-                <div className="bg-white rounded-lg shadow-lg">
+                <div 
+                  className="bg-white rounded-lg divide-y divide-gray-100"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {products.map((product) => (
                     <SelectItem 
                       key={product.id} 
                       value={product.id}
-                      className="cursor-pointer hover:bg-gray-100"
+                      className="cursor-pointer hover:bg-gray-100 relative z-[100] bg-white"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {product.name} - {product.price}€
                     </SelectItem>
