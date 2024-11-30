@@ -112,6 +112,12 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         const shippingCost = selectedShippingMethod?.price || 0;
         const subtotal = order.total_amount - shippingCost;
         
+        const orderItems = cart.map(item => ({
+          name: item.productName,
+          quantity: item.quantity,
+          price: item.price
+        }));
+        
         if (paymentMethod === "mbway") {
           if (payment.error) {
             toast.error(`Erro MBWay: ${payment.error}`, {
@@ -131,7 +137,8 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
                   shippingMethod: selectedShippingMethod?.name,
                   total: order.total_amount,
                   shippingCost,
-                  subtotal
+                  subtotal,
+                  items: orderItems
                 }
               }
             });
