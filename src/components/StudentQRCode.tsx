@@ -62,22 +62,18 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   }, [studentId]);
 
   const handleClick = async () => {
-    // First open the dialog
     setIsOpen(true);
     
-    // Wait for the dialog to open and content to render
     setTimeout(async () => {
       const container = containerRef.current;
       if (!container) return;
 
       try {
-        // Create a canvas with white background
         const canvas = await html2canvas(container, {
           backgroundColor: "white",
-          scale: 2, // Higher quality
+          scale: 2,
         });
 
-        // Convert to blob and download
         canvas.toBlob((blob) => {
           if (!blob) return;
           const url = URL.createObjectURL(blob);
@@ -92,7 +88,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
       } catch (error) {
         console.error("Error generating image:", error);
       }
-    }, 500); // Give enough time for the dialog to open and render
+    }, 500);
   };
 
   return (
@@ -111,7 +107,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
           ref={containerRef}
           className="flex flex-col items-center justify-center p-6 space-y-4 bg-white"
         >
-          {/* Logo */}
           <img 
             src="https://fotografiaescolar.duploefeito.com/logo.jpg"
             alt="Duplo Efeito" 
@@ -122,7 +117,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             }}
           />
 
-          {/* School and Class Info */}
           {schoolInfo && (
             <div className="text-center space-y-1">
               <p className="font-semibold">{schoolInfo.schoolName}</p>
@@ -131,7 +125,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             </div>
           )}
 
-          {/* Random Photo */}
           {randomPhoto && (
             <img 
               src={randomPhoto} 
@@ -144,7 +137,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
             />
           )}
 
-          {/* QR Code */}
           <QRCodeSVG value={qrValue} size={256} />
           <p className="mt-2 text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
         </div>
