@@ -119,5 +119,25 @@ export const processPayment = async (
     throw new Error(`Failed to process payment: ${paymentError.message}`);
   }
 
+  // Send email with payment details if it's a Multibanco payment
+  if (paymentMethod === 'multibanco' && payment.entity && payment.reference) {
+    try {
+      await supabase.functions.invoke("send-order-email", {
+        body: {
+          orderId,
+          type: "created",
+          paymentDetails: {
+            entity: payment.entity,
+            reference: payment.reference,
+            amount: payment.amount
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error sending payment email:', error);
+      toast.error('Erro ao enviar email com dados de pagamento');
+    }
+  }
+
   return payment;
 };

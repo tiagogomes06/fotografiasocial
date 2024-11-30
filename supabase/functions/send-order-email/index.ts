@@ -28,7 +28,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('[send-order-email] Supabase client created');
 
-    const { orderId, type } = await req.json();
+    const { orderId, type, paymentDetails } = await req.json();
     console.log(`[send-order-email] Processing ${type} email for order: ${orderId}`);
 
     // Create SMTP client
@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Generate email content
     console.log('[send-order-email] Generating email template...');
-    const emailHtml = createEmailTemplate(order, type);
+    const emailHtml = createEmailTemplate(order, type, false, paymentDetails);
 
     // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
@@ -103,11 +103,13 @@ serve(async (req) => {
     if (type === 'paid') {
       console.log('[send-order-email] Sending admin notification emails...');
       
+      const adminEmailHtml = createEmailTemplate(order, type, true);
+      
       await client.send({
         from: "Fotografia Escolar <encomendas@duploefeito.com>",
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
-        html: emailHtml,
+        html: adminEmailHtml,
       });
       
       console.log('[send-order-email] Admin notifications sent');

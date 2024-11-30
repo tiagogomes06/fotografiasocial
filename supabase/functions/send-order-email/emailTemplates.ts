@@ -1,6 +1,11 @@
 import { OrderDetails } from "./types.ts";
 
-export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid', isAdmin = false) => {
+export const createEmailTemplate = (
+  order: OrderDetails, 
+  type: 'created' | 'paid', 
+  isAdmin = false,
+  paymentDetails?: { entity: string; reference: string; amount: number }
+) => {
   const title = type === 'created' ? 
     'Nova Encomenda Criada' : 
     'Pagamento Recebido';
@@ -19,6 +24,30 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
 
   const subtotal = order.total_amount - (order.shipping_methods?.price || 0);
 
+  const multibancoPaymentInfo = paymentDetails && order.payment_method === 'multibanco' ? 
+    `<div style="margin: 1.5rem 0; padding: 1.5rem; background-color: #f0f9ff; border-radius: 0.5rem; border: 1px solid #bae6fd;">
+      <h2 style="color: #0369a1; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Dados para Pagamento Multibanco</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <p style="color: #64748b; font-size: 0.875rem;">Entidade</p>
+          <p style="color: #0f172a; font-size: 1.25rem; font-weight: 600;">${paymentDetails.entity}</p>
+        </div>
+        <div>
+          <p style="color: #64748b; font-size: 0.875rem;">Referência</p>
+          <p style="color: #0f172a; font-size: 1.25rem; font-weight: 600;">${paymentDetails.reference}</p>
+        </div>
+        <div>
+          <p style="color: #64748b; font-size: 0.875rem;">Montante</p>
+          <p style="color: #0f172a; font-size: 1.25rem; font-weight: 600;">${paymentDetails.amount}€</p>
+        </div>
+      </div>
+      <div style="background-color: #fff7ed; border-radius: 0.375rem; padding: 1rem; margin-top: 1rem;">
+        <p style="color: #9a3412; font-size: 0.875rem; display: flex; align-items: center;">
+          ⚠️ Por favor efetue o pagamento nas próximas 24 horas. Após este período, a referência poderá expirar.
+        </p>
+      </div>
+    </div>` : '';
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -32,6 +61,8 @@ export const createEmailTemplate = (order: OrderDetails, type: 'created' | 'paid
     <h1 style="color: #111827; margin-bottom: 1rem; text-align: center; font-size: 1.5rem; font-weight: 600;">${title}</h1>
     <p style="text-align: center; color: #4b5563; margin-bottom: 1.5rem;">${message}</p>
   </div>
+
+  ${multibancoPaymentInfo}
 
   <div style="background-color: white; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
     <div style="margin-bottom: 1rem;">
