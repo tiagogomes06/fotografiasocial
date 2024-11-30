@@ -23,6 +23,7 @@ interface EuPagoWebhookPayload {
   comissao?: string;
   local?: string;
   estado?: string;
+  resposta?: string;
 }
 
 async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
@@ -79,8 +80,21 @@ async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookP
       throw orderError;
     }
 
-    // Update the order status based on the payment status
-    const paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
+    // Check payment status based on payment method
+    let paymentStatus = 'failed';
+    
+    if (paymentDetails.mp === 'MB') {
+      // For Multibanco, estado '0' means success
+      paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
+    } else if (paymentDetails.mp === 'MW') {
+      // For MBWay, estado '0' means success
+      paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
+      
+      // Log additional MBWay specific information
+      if (paymentDetails.resposta) {
+        console.log('[payment-webhook] MBWay response:', paymentDetails.resposta);
+      }
+    }
     
     const { error: updateError } = await supabase
       .from('orders')
@@ -126,7 +140,8 @@ async function handleEuPagoWebhook(payload: EuPagoWebhookPayload) {
     method: payload.mp,
     date: payload.data,
     location: payload.local,
-    status: payload.estado
+    status: payload.estado,
+    response: payload.resposta
   });
 
   await updateOrderStatus(orderId, payload);
