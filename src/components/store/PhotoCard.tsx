@@ -28,7 +28,7 @@ const PhotoCard = ({
       )}
       onClick={() => onSelect(photo)}
     >
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-4">
         <div className="relative group cursor-pointer">
           <img
             src={photo}
@@ -45,7 +45,7 @@ const PhotoCard = ({
         
         {isSelected && (
           <div 
-            className="animate-fade-in"
+            className="animate-fade-in mt-4"
             onClick={(e) => e.stopPropagation()}
           >
             <ProductSelect
