@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Client } from "npm:basic-ftp@5.0.3"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { Buffer } from "https://deno.land/std@0.177.0/node/buffer.ts";
+import { Readable } from "https://deno.land/std@0.177.0/node/stream.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -77,12 +79,10 @@ serve(async (req) => {
     console.log('Starting FTP upload...');
     const response = await fetch(publicUrl);
     const arrayBuffer = await response.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    
-    await client.uploadFrom(
-      uint8Array,
-      `/photos/${fileName}`
-    );
+    const buffer = Buffer.from(arrayBuffer);
+    const stream = Readable.from(buffer);
+
+    await client.uploadFrom(stream, `/photos/${fileName}`);
     console.log("File uploaded successfully to FTP");
 
     // Delete temporary file from Supabase Storage after 3 seconds
