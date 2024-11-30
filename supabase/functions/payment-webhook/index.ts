@@ -70,7 +70,7 @@ serve(async (req) => {
       throw new Error('Invalid payment notification: missing transaction ID or amount');
     }
 
-    console.log(`[payment-webhook] Processing payment for order ${orderId}:`, {
+    console.log(`[payment-webhook] Processing ${payload.mp} payment for order ${orderId}:`, {
       transactionId: payload.transacao,
       amount: payload.valor,
       method: payload.mp,
@@ -78,14 +78,15 @@ serve(async (req) => {
       status: payload.estado
     });
 
-    // For both MBWay and Multibanco, estado '0' means success
+    // For both MBWay (MW) and Multibanco (MB), estado '0' means success
     const paymentStatus = payload.estado === '0' ? 'completed' : 'failed';
     
     const { error: updateError } = await supabase
       .from('orders')
       .update({ 
         payment_status: paymentStatus,
-        payment_id: payload.transacao
+        payment_id: payload.transacao,
+        status: paymentStatus === 'completed' ? 'processing' : 'cancelled'
       })
       .eq('id', orderId);
 
@@ -94,7 +95,7 @@ serve(async (req) => {
       throw updateError;
     }
 
-    console.log('[payment-webhook] Order status updated successfully');
+    console.log('[payment-webhook] Order status updated successfully to:', paymentStatus);
     
     return new Response(
       JSON.stringify({ 
