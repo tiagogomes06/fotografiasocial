@@ -32,12 +32,6 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i)
     }
 
-    // Create temporary file
-    console.log('Creating temporary file...')
-    const tempFile = await Deno.makeTempFile()
-    await Deno.writeFile(tempFile, bytes)
-    console.log('Temporary file created:', tempFile)
-
     // Setup FTP client
     const client = new Client()
     client.ftp.verbose = true
@@ -73,9 +67,9 @@ serve(async (req) => {
         console.log('Directory already exists or could not be created:', error)
       }
 
-      // Upload file to /photos directory
+      // Upload file directly from memory
       console.log('Starting file upload...')
-      await client.uploadFrom(tempFile, `/photos/${fileName}`)
+      await client.uploadFrom(bytes.buffer, `/photos/${fileName}`)
       console.log("File uploaded successfully")
 
       // Construct the public URL
@@ -105,8 +99,6 @@ serve(async (req) => {
       // Clean up
       console.log('Cleaning up...')
       client.close()
-      await Deno.remove(tempFile)
-      console.log('Cleanup completed')
     }
 
   } catch (error) {
