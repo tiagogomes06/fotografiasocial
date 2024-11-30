@@ -26,89 +26,6 @@ interface EuPagoWebhookPayload {
   resposta?: string;
 }
 
-async function sendPaymentConfirmationEmail(orderId: string, orderDetails: any) {
-  console.log('[payment-webhook] Sending confirmation email for order:', orderId);
-  console.log('[payment-webhook] Order details:', orderDetails);
-  
-  try {
-    const emailHtml = `
-      <h2>Pagamento Confirmado - Encomenda #${orderId}</h2>
-      <p>O seu pagamento foi confirmado com sucesso!</p>
-      <p>Detalhes da encomenda:</p>
-      <ul>
-        <li>Total: ${orderDetails.total_amount}€</li>
-        <li>Estado: Pago</li>
-        <li>Data de pagamento: ${new Date().toLocaleString('pt-PT')}</li>
-      </ul>
-      <p>Obrigado pela sua compra!</p>
-    `;
-
-    console.log('[payment-webhook] Invoking send-order-email function');
-    const { error: emailError } = await supabase.functions.invoke('send-order-email', {
-      body: { 
-        orderId,
-        type: 'paid',
-        html: emailHtml
-      }
-    });
-
-    if (emailError) {
-      console.error('[payment-webhook] Error sending payment confirmation email:', emailError);
-      throw emailError;
-    }
-    
-    console.log('[payment-webhook] Confirmation email sent successfully');
-  } catch (error) {
-    console.error('[payment-webhook] Failed to send payment confirmation email:', error);
-    throw error;
-  }
-}
-
-async function updateOrderStatus(orderId: string, paymentDetails: EuPagoWebhookPayload) {
-  console.log(`[payment-webhook] Updating order ${orderId} with payment details:`, paymentDetails);
-  
-  try {
-    // First get the order details for the email
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
-
-    if (orderError) {
-      console.error('[payment-webhook] Error fetching order:', orderError);
-      throw orderError;
-    }
-
-    // For MBWay, estado '0' means success
-    const paymentStatus = paymentDetails.estado === '0' ? 'completed' : 'failed';
-    
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({ 
-        payment_status: paymentStatus,
-        payment_id: paymentDetails.transacao,
-        status: paymentStatus === 'completed' ? 'processing' : 'cancelled'
-      })
-      .eq('id', orderId);
-
-    if (updateError) {
-      console.error('[payment-webhook] Error updating order status:', updateError);
-      throw updateError;
-    }
-
-    console.log('[payment-webhook] Order status updated successfully');
-    
-    // Only send confirmation email if payment was successful
-    if (paymentStatus === 'completed') {
-      await sendPaymentConfirmationEmail(orderId, order);
-    }
-  } catch (error) {
-    console.error('[payment-webhook] Failed to process order update:', error);
-    throw error;
-  }
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -144,11 +61,6 @@ serve(async (req) => {
 
     console.log('[payment-webhook] Parsed payload:', payload);
 
-    // Verify this is a MBWay payment
-    if (payload.mp !== 'MW') {
-      throw new Error('This webhook only handles MBWay payments');
-    }
-
     const orderId = payload.identificador;
     if (!orderId) {
       throw new Error('No order identifier (identificador) in EuPago webhook');
@@ -158,17 +70,31 @@ serve(async (req) => {
       throw new Error('Invalid payment notification: missing transaction ID or amount');
     }
 
-    console.log(`[payment-webhook] Processing MBWay payment for order ${orderId}:`, {
+    console.log(`[payment-webhook] Processing payment for order ${orderId}:`, {
       transactionId: payload.transacao,
       amount: payload.valor,
       method: payload.mp,
       date: payload.data,
-      location: payload.local,
-      status: payload.estado,
-      response: payload.resposta
+      status: payload.estado
     });
 
-    await updateOrderStatus(orderId, payload);
+    // For both MBWay and Multibanco, estado '0' means success
+    const paymentStatus = payload.estado === '0' ? 'completed' : 'failed';
+    
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        payment_status: paymentStatus,
+        payment_id: payload.transacao
+      })
+      .eq('id', orderId);
+
+    if (updateError) {
+      console.error('[payment-webhook] Error updating order status:', updateError);
+      throw updateError;
+    }
+
+    console.log('[payment-webhook] Order status updated successfully');
     
     return new Response(
       JSON.stringify({ 
