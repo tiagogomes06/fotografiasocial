@@ -14,21 +14,31 @@ const MBWayConfirmation = () => {
   const [progress, setProgress] = useState(100);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Get order details from location state
   const orderDetails = location.state?.orderDetails;
 
+  // Initial check for order details and loading state
   useEffect(() => {
-    // Add a small delay to prevent flash of blank content
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      if (!orderDetails) {
+    const checkOrderDetails = () => {
+      if (!location.state || !orderDetails) {
         toast.error("Informação da encomenda não encontrada");
-        navigate("/");
+        navigate("/cart");
+        return false;
       }
-    }, 500);
+      return true;
+    };
+
+    // Add a small delay to show loading state and prevent flash
+    const timer = setTimeout(() => {
+      if (checkOrderDetails()) {
+        setIsLoading(false);
+      }
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [orderDetails, navigate]);
+  }, [location.state, orderDetails, navigate]);
 
+  // Countdown timer effect
   useEffect(() => {
     if (!orderDetails) return;
 
@@ -36,6 +46,8 @@ const MBWayConfirmation = () => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
+          toast.error("Tempo limite excedido. Por favor, tente novamente.");
+          navigate("/cart");
           return 0;
         }
         return prevTime - 1;
@@ -43,27 +55,26 @@ const MBWayConfirmation = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [orderDetails]);
+  }, [orderDetails, navigate]);
 
+  // Update progress bar
   useEffect(() => {
     setProgress((timeLeft / 240) * 100);
-    if (timeLeft === 0) {
-      toast.error("Tempo limite excedido. Por favor, tente novamente.");
-      navigate("/");
-    }
-  }, [timeLeft, navigate]);
+  }, [timeLeft]);
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-          <p className="text-gray-600">A carregar...</p>
+          <p className="text-gray-600">A processar o seu pedido...</p>
         </div>
       </div>
     );
   }
 
+  // Ensure we have order details
   if (!orderDetails) {
     return null;
   }
@@ -76,11 +87,11 @@ const MBWayConfirmation = () => {
       <div className="max-w-4xl mx-auto px-4 space-y-8">
         <Button
           variant="ghost"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/cart")}
           className="mb-6 hover:bg-white/50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar à Loja
+          Voltar ao Carrinho
         </Button>
 
         <div className="grid gap-8 md:grid-cols-2">
