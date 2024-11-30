@@ -38,13 +38,6 @@ export const uploadPhoto = async (file: File, studentId: string) => {
   const fileExt = file.name.split('.').pop();
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
-  // Upload to Supabase Storage (backup)
-  const { error: uploadError } = await supabase.storage
-    .from('student_photos')
-    .upload(fileName, file);
-
-  if (uploadError) throw uploadError;
-
   // Get the file as base64
   const base64Data = await new Promise<string>((resolve) => {
     const reader = new FileReader();
