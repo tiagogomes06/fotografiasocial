@@ -108,6 +108,17 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
           quantity: 1,
           price: item.price
         }));
+
+        const orderDetails = {
+          orderId: order.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          shippingMethod: selectedShippingMethod?.name,
+          total: order.total_amount,
+          items: orderItems,
+          shippingCost
+        };
         
         if (paymentMethod === "mbway") {
           if (payment.error) {
@@ -116,22 +127,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
             });
           } else {
             navigate("/mbway-confirmation", {
-              state: {
-                orderDetails: {
-                  orderId: order.id,
-                  name: formData.name,
-                  address: formData.address,
-                  city: formData.city,
-                  postalCode: formData.postalCode,
-                  email: formData.email,
-                  phone: formData.phone,
-                  shippingMethod: selectedShippingMethod?.name,
-                  total: order.total_amount,
-                  shippingCost,
-                  subtotal,
-                  items: orderItems
-                }
-              }
+              state: { orderDetails }
             });
           }
         } else if (paymentMethod === "multibanco") {
@@ -142,6 +138,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
           } else {
             navigate("/payment-confirmation", {
               state: {
+                orderDetails,
                 paymentDetails: {
                   entity: payment.entity,
                   reference: payment.reference,
