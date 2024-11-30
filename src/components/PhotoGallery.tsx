@@ -3,11 +3,7 @@ import { Button } from "./ui/button";
 import { Download, ShoppingBag, X } from "lucide-react";
 import { downloadSinglePhoto, downloadAllPhotos } from "@/utils/downloadUtils";
 import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -39,17 +35,26 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Card className="bg-white/95 backdrop-blur-sm border shadow-lg rounded-xl overflow-hidden">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Fotos de {studentName}</h2>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={handleAllDownload} variant="outline" className="w-full sm:w-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Fotos de {studentName}
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={handleAllDownload} 
+                variant="outline" 
+                className="w-full sm:w-auto hover:bg-gray-100"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Transferir Todas
               </Button>
-              <Button onClick={goToStore} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
+              <Button 
+                onClick={goToStore} 
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+              >
                 <ShoppingBag className="mr-2 h-4 w-4" />
                 Ir para a Loja
               </Button>
@@ -58,9 +63,12 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {photos.map((photo, index) => (
-          <Card key={index} className="group overflow-hidden bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card 
+            key={index} 
+            className="group overflow-hidden bg-white/95 backdrop-blur-sm border shadow-md hover:shadow-xl transition-all duration-300 rounded-xl"
+          >
             <CardContent className="p-4 space-y-3">
               <Dialog>
                 <DialogTrigger asChild>
@@ -95,9 +103,8 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
               
               <Button
                 variant="secondary"
-                size="sm"
                 onClick={() => handleSingleDownload(photo, index)}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Transferir

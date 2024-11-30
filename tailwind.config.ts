@@ -25,20 +25,24 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#333333",
+          DEFAULT: "#8B5CF6",
           foreground: "#FFFFFF",
+          hover: "#7C3AED",
         },
         secondary: {
-          DEFAULT: "#F5F5F5",
-          foreground: "#333333",
+          DEFAULT: "#F3F4F6",
+          foreground: "#1F2937",
+          hover: "#E5E7EB",
         },
         muted: {
-          DEFAULT: "#F0F0F0",
-          foreground: "#666666",
+          DEFAULT: "#F9FAFB",
+          foreground: "#6B7280",
+          hover: "#F3F4F6",
         },
         accent: {
-          DEFAULT: "#E5E5E5",
-          foreground: "#333333",
+          DEFAULT: "#E5E7EB",
+          foreground: "#1F2937",
+          hover: "#D1D5DB",
         },
       },
       borderRadius: {
@@ -65,10 +69,23 @@ export default {
             opacity: "1",
           },
         },
+        "slide-in": {
+          "0%": {
+            transform: "translateX(-100%)",
+          },
+          "100%": {
+            transform: "translateX(0)",
+          },
+        },
       },
       animation: {
         "fade-up": "fade-up 0.5s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
+        "slide-in": "slide-in 0.3s ease-out",
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-soft': 'linear-gradient(to right, rgb(249, 250, 251), rgb(243, 244, 246))',
       },
     },
   },
