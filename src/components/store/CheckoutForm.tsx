@@ -80,11 +80,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
       return;
     }
 
-    if (!cart[0]?.studentId) {
-      toast.error("Erro ao processar o pedido: ID do estudante não encontrado");
-      return;
-    }
-
     try {
       setIsProcessing(true);
       toast.info("A processar o seu pedido...");
@@ -172,14 +167,14 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm border p-6 md:p-8 space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto">
+      <div className="bg-gradient-soft rounded-xl shadow-sm p-6 md:p-8 space-y-8">
         <div className="flex items-center gap-4 pb-6 border-b">
           <Button 
             type="button" 
             variant="ghost" 
             onClick={onBack}
-            className="gap-2"
+            className="gap-2 hover:bg-white/50"
             disabled={isProcessing}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -202,11 +197,11 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
           setPaymentMethod={setPaymentMethod}
         />
 
-        <div className="pt-6 border-t">
+        <div className="pt-6">
           <Button 
             type="submit" 
             disabled={isProcessing}
-            className="w-full h-12 text-lg"
+            className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-white"
           >
             {isProcessing ? "A processar..." : "Finalizar Compra"}
           </Button>
