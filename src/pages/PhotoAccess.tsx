@@ -20,11 +20,16 @@ const PhotoAccess = () => {
   };
 
   useEffect(() => {
-    // Check if we have a stored access code
-    const storedAccessCode = localStorage.getItem("accessCode");
-    if (storedAccessCode && !state?.authenticated) {
-      handleAccessCodeVerification(storedAccessCode);
-    }
+    const checkAuthentication = async () => {
+      const isAuthenticated = localStorage.getItem("isAuthenticated");
+      const storedAccessCode = localStorage.getItem("accessCode");
+      
+      if (isAuthenticated === "true" && storedAccessCode && !state?.authenticated) {
+        await handleAccessCodeVerification(storedAccessCode);
+      }
+    };
+
+    checkAuthentication();
   }, []);
 
   const handleAccessCodeVerification = async (code: string) => {
@@ -44,11 +49,13 @@ const PhotoAccess = () => {
 
       if (error || !student) {
         toast.error("Código de acesso inválido");
+        localStorage.removeItem("isAuthenticated");
         return;
       }
 
       localStorage.setItem("studentId", student.id);
       localStorage.setItem("accessCode", code);
+      localStorage.setItem("isAuthenticated", "true");
 
       const photoUrls = student.photos.map((photo: { url: string }) => {
         const { data: { publicUrl } } = supabase.storage
@@ -69,6 +76,7 @@ const PhotoAccess = () => {
     } catch (error) {
       console.error("Error:", error);
       toast.error("Ocorreu um erro ao verificar o código");
+      localStorage.removeItem("isAuthenticated");
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +98,10 @@ const PhotoAccess = () => {
         src="https://fotografiaescolar.duploefeito.com/logo.jpg"
         alt="Duplo Efeito"
         className="w-32 h-auto mb-8"
+        onError={(e) => {
+          const img = e.target as HTMLImageElement;
+          img.style.display = 'none';
+        }}
       />
       <div className="w-full max-w-sm space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">

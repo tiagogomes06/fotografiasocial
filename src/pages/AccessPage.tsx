@@ -38,9 +38,10 @@ const AccessPage = () => {
           return;
         }
 
-        // Store the student ID and access code in localStorage
+        // Store authentication data
         localStorage.setItem("studentId", student.id);
         localStorage.setItem("accessCode", code);
+        localStorage.setItem("isAuthenticated", "true");
         
         // Get photo URLs
         const photoUrls = student.photos.map((photo: { url: string }) => {
@@ -50,7 +51,7 @@ const AccessPage = () => {
           return publicUrl;
         });
 
-        // Redirect to photo gallery with the photos and student name
+        // Redirect to photo gallery with authentication state
         navigate("/", { 
           state: { 
             photos: photoUrls,
