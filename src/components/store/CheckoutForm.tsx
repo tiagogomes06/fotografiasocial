@@ -8,7 +8,13 @@ import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import ShippingForm from "./ShippingForm";
 import PaymentMethodSelect from "./PaymentMethodSelect";
-import { ensurePhotosExist, createOrder, createOrderItems, processPayment } from "@/utils/orderUtils";
+import { 
+  ensurePhotosExist, 
+  createOrder, 
+  createOrderItems, 
+  processPayment 
+} from "@/utils/orderUtils";
+import { ArrowLeft } from "lucide-react";
 
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 
@@ -114,18 +120,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
               duration: 10000
             });
           } else {
-            console.log("Navigating to MBWay confirmation with order details:", {
-              orderId: order.id,
-              name: formData.name,
-              address: formData.address,
-              city: formData.city,
-              postalCode: formData.postalCode,
-              email: formData.email,
-              phone: formData.phone,
-              shippingMethod: selectedShippingMethod?.name,
-              total: order.total_amount
-            });
-            
             navigate("/mbway-confirmation", {
               state: {
                 orderDetails: {
@@ -172,33 +166,45 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      <ShippingForm
-        formData={formData}
-        setFormData={setFormData}
-        shippingMethod={shippingMethod}
-        setShippingMethod={setShippingMethod}
-        shippingMethods={shippingMethods}
-        isPickupMethod={isPickupMethod}
-      />
+    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto">
+      <div className="bg-white rounded-xl shadow-sm border p-6 md:p-8 space-y-8">
+        <div className="flex items-center gap-4 pb-6 border-b">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onBack}
+            className="gap-2"
+            disabled={isProcessing}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar ao Carrinho
+          </Button>
+          <h1 className="text-2xl font-bold">Finalizar Compra</h1>
+        </div>
 
-      <PaymentMethodSelect
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
-      />
+        <ShippingForm
+          formData={formData}
+          setFormData={setFormData}
+          shippingMethod={shippingMethod}
+          setShippingMethod={setShippingMethod}
+          shippingMethods={shippingMethods}
+          isPickupMethod={isPickupMethod}
+        />
 
-      <div className="flex gap-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onBack}
-          disabled={isProcessing}
-        >
-          Voltar ao Carrinho
-        </Button>
-        <Button type="submit" disabled={isProcessing}>
-          {isProcessing ? "A processar..." : "Finalizar Compra"}
-        </Button>
+        <PaymentMethodSelect
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+        />
+
+        <div className="pt-6 border-t">
+          <Button 
+            type="submit" 
+            disabled={isProcessing}
+            className="w-full h-12 text-lg"
+          >
+            {isProcessing ? "A processar..." : "Finalizar Compra"}
+          </Button>
+        </div>
       </div>
     </form>
   );
