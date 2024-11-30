@@ -2,27 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { CartItem, Product } from "@/types/admin";
+import { CartItem } from "@/types/admin";
 import { toast } from "sonner";
-import { loadStripe } from "@stripe/stripe-js";
-import ShippingForm from "./ShippingForm";
-import PaymentMethodSelect from "./PaymentMethodSelect";
 import { 
   ensurePhotosExist, 
   createOrder, 
   createOrderItems, 
   processPayment 
 } from "@/utils/orderUtils";
-import { ArrowLeft } from "lucide-react";
-
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-
-if (!STRIPE_PUBLIC_KEY) {
-  console.error('VITE_STRIPE_PUBLIC_KEY is not set in environment variables');
-}
-
-const stripePromise = loadStripe(STRIPE_PUBLIC_KEY || '');
+import ShippingForm from "./ShippingForm";
+import PaymentMethodSelect from "./PaymentMethodSelect";
+import CheckoutHeader from "./checkout/CheckoutHeader";
+import CheckoutButton from "./checkout/CheckoutButton";
 
 interface CheckoutFormProps {
   cart: CartItem[];
@@ -112,7 +103,6 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
         const shippingCost = selectedShippingMethod?.price || 0;
         const subtotal = order.total_amount - shippingCost;
         
-        // Each cart item represents one photo with its selected product
         const orderItems = cart.map(item => ({
           name: "Fotografia",
           quantity: 1,
@@ -175,44 +165,28 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto">
-      <div className="bg-gradient-soft rounded-xl shadow-sm p-6 md:p-8 space-y-8">
-        <div className="flex items-center gap-4 pb-6 border-b">
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onClick={onBack}
-            className="gap-2 hover:bg-white/50"
-            disabled={isProcessing}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao Carrinho
-          </Button>
-          <h1 className="text-2xl font-bold">Finalizar Compra</h1>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto">
+      <div className="bg-gradient-soft rounded-xl shadow-sm p-4 md:p-8 space-y-6">
+        <CheckoutHeader onBack={onBack} isProcessing={isProcessing} />
 
-        <ShippingForm
-          formData={formData}
-          setFormData={setFormData}
-          shippingMethod={shippingMethod}
-          setShippingMethod={setShippingMethod}
-          shippingMethods={shippingMethods}
-          isPickupMethod={isPickupMethod}
-        />
+        <div className="space-y-8">
+          <ShippingForm
+            formData={formData}
+            setFormData={setFormData}
+            shippingMethod={shippingMethod}
+            setShippingMethod={setShippingMethod}
+            shippingMethods={shippingMethods}
+            isPickupMethod={isPickupMethod}
+          />
 
-        <PaymentMethodSelect
-          paymentMethod={paymentMethod}
-          setPaymentMethod={setPaymentMethod}
-        />
+          <PaymentMethodSelect
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+          />
 
-        <div className="pt-6">
-          <Button 
-            type="submit" 
-            disabled={isProcessing}
-            className="w-full h-12 text-lg bg-primary hover:bg-primary/90 text-white"
-          >
-            {isProcessing ? "A processar..." : "Finalizar Compra"}
-          </Button>
+          <div className="pt-4">
+            <CheckoutButton isProcessing={isProcessing} />
+          </div>
         </div>
       </div>
     </form>
