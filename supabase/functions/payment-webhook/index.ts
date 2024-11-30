@@ -45,6 +45,11 @@ serve(async (req) => {
 
     console.log('[payment-webhook] Parsed payload:', payload);
 
+    // Verify this is a valid payment notification
+    if (!payload.mp) {
+      throw new Error('Invalid payment notification: missing payment method');
+    }
+
     const orderId = payload.identificador;
     if (!orderId) {
       throw new Error('No order identifier (identificador) in EuPago webhook');
@@ -65,8 +70,9 @@ serve(async (req) => {
       reference: payload.referencia
     });
 
-    // Se recebemos uma notificação do banco (PC:PT) ou MBWay com estado 0, o pagamento foi bem sucedido
-    const isSuccess = payload.mp === 'PC:PT' || payload.estado === '0';
+    // Se recebemos uma notificação do banco (PC:PT) ou MBWay (MW:PT), o pagamento foi bem sucedido
+    // Para outros métodos, verificamos o estado
+    const isSuccess = payload.mp === 'PC:PT' || payload.mp === 'MW:PT' || payload.estado === '0';
     const paymentStatus = isSuccess ? 'completed' : 'failed';
     
     const { error: updateError } = await supabase
