@@ -78,8 +78,14 @@ serve(async (req) => {
       status: payload.estado
     });
 
-    // For both MBWay (MW) and Multibanco (MB), estado '0' means success
-    const paymentStatus = payload.estado === '0' ? 'completed' : 'failed';
+    // For Multibanco (MB), success can be indicated by estado being either '0' or undefined
+    // For MBWay (MW), only estado '0' means success
+    const isMultibanco = payload.mp === 'MB';
+    const isSuccess = isMultibanco ? 
+      (payload.estado === '0' || !payload.estado) : // For Multibanco
+      payload.estado === '0'; // For MBWay
+
+    const paymentStatus = isSuccess ? 'completed' : 'failed';
     
     const { error: updateError } = await supabase
       .from('orders')
