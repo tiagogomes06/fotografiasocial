@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import html2canvas from "html2canvas";
 
 interface StudentQRCodeProps {
   accessCode: string;
@@ -16,6 +17,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   const containerRef = useRef<HTMLDivElement>(null);
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -48,7 +50,6 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
           const photoUrl = data.photos[randomIndex].url;
-          // Get the public URL for the photo from Supabase Storage
           const { data: publicUrl } = supabase.storage
             .from('photos')
             .getPublicUrl(photoUrl.split('/').pop() || '');
@@ -60,10 +61,44 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
     fetchStudentInfo();
   }, [studentId]);
 
+  const handleClick = async () => {
+    // First open the dialog
+    setIsOpen(true);
+    
+    // Wait for the dialog to open and content to render
+    setTimeout(async () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      try {
+        // Create a canvas with white background
+        const canvas = await html2canvas(container, {
+          backgroundColor: "white",
+          scale: 2, // Higher quality
+        });
+
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `qrcode-${studentName.toLowerCase().replace(/\s+/g, '-')}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, "image/png");
+      } catch (error) {
+        console.error("Error generating image:", error);
+      }
+    }, 500); // Give enough time for the dialog to open and render
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handleClick}>
           <QrCode className="h-4 w-4 mr-1" />
           Código QR
         </Button>
