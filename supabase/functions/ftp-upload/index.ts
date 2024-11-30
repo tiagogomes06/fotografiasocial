@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Client } from "npm:basic-ftp@5.0.3"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,9 +13,13 @@ serve(async (req) => {
   }
 
   let client: Client | null = null;
+  let supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   try {
-    console.log('Starting FTP upload process...');
+    console.log('Starting upload process...');
     const { fileData, fileName } = await req.json();
     
     if (!fileData || !fileName) {
@@ -22,17 +27,32 @@ serve(async (req) => {
       throw new Error('Missing required data: fileData or fileName');
     }
 
-    console.log('Received file:', fileName);
-
-    // Convert base64 to Uint8Array
+    // First, upload to Supabase Storage temporarily
+    console.log('Uploading to Supabase Storage...');
     const base64Data = fileData.split(',')[1];
-    console.log('Converting base64 to binary...');
     const binaryString = atob(base64Data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(`temp/${fileName}`, bytes.buffer, {
+        contentType: 'image/*',
+        upsert: true
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase Storage upload failed: ${uploadError.message}`);
+    }
+
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(`temp/${fileName}`);
+
+    // Now upload to FTP using the Supabase URL
     client = new Client();
     client.ftp.verbose = true;
     
@@ -45,10 +65,6 @@ serve(async (req) => {
       secure: false
     });
 
-    // Create a temporary file
-    const tempFilePath = await Deno.makeTempFile();
-    await Deno.writeFile(tempFilePath, bytes);
-
     // Ensure /photos directory exists
     try {
       await client.ensureDir("/photos");
@@ -57,21 +73,37 @@ serve(async (req) => {
       console.log('Directory already exists or could not be created:', error);
     }
 
-    // Upload file
-    console.log('Starting file upload...');
-    await client.uploadFrom(tempFilePath, `/photos/${fileName}`);
-    console.log("File uploaded successfully");
+    // Download from Supabase URL and upload to FTP
+    console.log('Starting FTP upload...');
+    const response = await fetch(publicUrl);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    await client.uploadFrom(
+      new Uint8Array(arrayBuffer), 
+      `/photos/${fileName}`
+    );
+    console.log("File uploaded successfully to FTP");
 
-    // Clean up temp file
-    await Deno.remove(tempFilePath);
+    // Delete temporary file from Supabase Storage after 3 seconds
+    setTimeout(async () => {
+      const { error: deleteError } = await supabase.storage
+        .from('photos')
+        .remove([`temp/${fileName}`]);
+      
+      if (deleteError) {
+        console.error('Error deleting temporary file:', deleteError);
+      } else {
+        console.log('Temporary file deleted from Supabase Storage');
+      }
+    }, 3000);
 
-    const publicUrl = `fotografiaescolar.duploefeito.com/fotos_alojamento/photos/${fileName}`;
-    console.log('Generated public URL:', publicUrl);
+    const ftpUrl = `fotografiaescolar.duploefeito.com/fotos_alojamento/photos/${fileName}`;
+    console.log('Generated FTP URL:', ftpUrl);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: publicUrl
+        url: ftpUrl
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -80,7 +112,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in FTP upload:', error);
+    console.error('Error in upload process:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
