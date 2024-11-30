@@ -45,23 +45,23 @@ export const uploadPhoto = async (file: File, studentId: string) => {
     reader.readAsDataURL(file);
   });
 
-  // Upload to S3 via Edge Function
-  const s3Response = await supabase.functions.invoke('s3-upload', {
+  // Upload to Google Drive via Edge Function
+  const driveResponse = await supabase.functions.invoke('drive-upload', {
     body: {
       fileData: base64Data,
       fileName: fileName,
     },
   });
 
-  if (s3Response.error) {
-    throw new Error('Failed to upload to S3');
+  if (driveResponse.error) {
+    throw new Error('Failed to upload to Google Drive');
   }
 
-  // Create photo record with S3 URL
+  // Create photo record with Google Drive URL
   const { data, error } = await supabase
     .from('photos')
     .insert({ 
-      url: s3Response.data.url, 
+      url: driveResponse.data.url, 
       student_id: studentId 
     })
     .select()
