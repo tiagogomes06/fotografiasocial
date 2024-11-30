@@ -1,4 +1,5 @@
-import { useLocation, Navigate, useEffect } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import { ArrowLeft, CreditCard, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "@/components/store/OrderSummary";

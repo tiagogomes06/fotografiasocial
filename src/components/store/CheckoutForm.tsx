@@ -47,6 +47,18 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
     },
   });
 
+  const { data: products = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const selectedShippingMethod = shippingMethods.find(
     method => method.id === shippingMethod
   );
