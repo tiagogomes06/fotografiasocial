@@ -24,6 +24,7 @@ const PhotoCard = ({
   quantity = 1
 }: PhotoCardProps) => {
   const [showProducts, setShowProducts] = useState(false);
+  const [currentQuantity, setCurrentQuantity] = useState(quantity);
 
   const handleClick = () => {
     onSelect(photo);
@@ -31,6 +32,7 @@ const PhotoCard = ({
   };
 
   const handleProductSelect = (productId: string, newQuantity: number) => {
+    setCurrentQuantity(newQuantity);
     onProductSelect(productId, newQuantity);
   };
 
@@ -59,7 +61,7 @@ const PhotoCard = ({
             selectedProduct={selectedProduct}
             onProductSelect={handleProductSelect}
             products={products}
-            quantity={quantity}
+            quantity={currentQuantity}
           />
         </div>
       )}
