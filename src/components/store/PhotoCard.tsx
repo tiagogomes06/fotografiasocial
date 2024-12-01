@@ -12,6 +12,7 @@ interface PhotoCardProps {
   onProductSelect: (productId: string, quantity: number) => void;
   products: Product[];
   quantity?: number;
+  onQuantityChange?: (quantity: number) => void;
 }
 
 const PhotoCard = ({
@@ -21,7 +22,8 @@ const PhotoCard = ({
   selectedProduct,
   onProductSelect,
   products,
-  quantity = 1
+  quantity = 1,
+  onQuantityChange
 }: PhotoCardProps) => {
   const [showProducts, setShowProducts] = useState(false);
   const [currentQuantity, setCurrentQuantity] = useState(quantity);
@@ -33,6 +35,9 @@ const PhotoCard = ({
 
   const handleProductSelect = (productId: string, newQuantity: number) => {
     setCurrentQuantity(newQuantity);
+    if (onQuantityChange) {
+      onQuantityChange(newQuantity);
+    }
     onProductSelect(productId, newQuantity);
   };
 
@@ -49,6 +54,8 @@ const PhotoCard = ({
           src={photo}
           alt="Fotografia"
           className="w-full h-full object-cover"
+          onContextMenu={(e) => e.preventDefault()}
+          draggable="false"
         />
         {isSelected && (
           <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-in fade-in-0" />
