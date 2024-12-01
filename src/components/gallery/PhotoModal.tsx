@@ -16,14 +16,15 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
           alt={`Foto ${index + 1}`}
           className="h-auto max-h-[85vh] w-auto max-w-[90vw] object-contain"
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
-        >
-          <X className="h-4 w-4" />
-          <DialogClose />
-        </Button>
+        <DialogClose asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogClose>
       </div>
     </DialogContent>
   );
