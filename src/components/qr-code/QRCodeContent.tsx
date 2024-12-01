@@ -15,7 +15,9 @@ interface QRCodeContentProps {
 const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRCodeContentProps) => {
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
-  const qrValue = `https://fotografiasocial.duploefeito.com/access?code=${accessCode}`;
+  // Use window.location.origin to get the current domain
+  const baseUrl = window.location.origin;
+  const qrValue = `${baseUrl}/access?code=${accessCode}`;
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -47,7 +49,12 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
 
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
-          setRandomPhoto(data.photos[randomIndex].url);
+          let photoUrl = data.photos[randomIndex].url;
+          if (photoUrl.includes('supabase')) {
+            const filename = photoUrl.split('/').pop();
+            photoUrl = `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+          }
+          setRandomPhoto(photoUrl);
         }
       }
     };
@@ -92,7 +99,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
         </p>
         <div className="text-sm text-gray-600">
           <p className="font-medium">Site para</p>
-          <p>acesso : fotografiasocial.duploefeito.com</p>
+          <p>acesso : {new URL(qrValue).host}</p>
         </div>
       </div>
     </div>
