@@ -8,11 +8,6 @@ interface PhotoModalProps {
 }
 
 const PhotoModal = ({ photo, index }: PhotoModalProps) => {
-  const handleClose = () => {
-    const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
-    if (closeButton) closeButton.click();
-  };
-
   return (
     <DialogContent className="max-w-[95vw] w-auto p-0 bg-transparent border-none">
       <div className="relative w-full h-[90vh] flex items-center justify-center bg-black/80">
@@ -22,14 +17,13 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
           className="h-auto max-h-[85vh] w-auto max-w-[90vw] object-contain"
         />
         <Button
-          onClick={handleClose}
           variant="ghost"
           size="icon"
           className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
         >
           <X className="h-4 w-4" />
+          <DialogClose />
         </Button>
-        <DialogClose className="hidden" />
       </div>
     </DialogContent>
   );
