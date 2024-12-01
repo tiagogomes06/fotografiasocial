@@ -14,7 +14,7 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
         <img
           src={photo}
           alt={`Foto ${index + 1}`}
-          className="max-h-[85vh] w-auto max-w-[90vw] object-contain"
+          className="h-auto max-h-[85vh] w-auto max-w-[90vw] object-contain"
         />
         <Button
           onClick={() => {
