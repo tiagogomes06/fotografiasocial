@@ -17,7 +17,9 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
     console.error("Falha ao carregar imagem:", {
       url: photo,
       error: "Imagem não carregou",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userAgent: window.navigator.userAgent,
+      isMobile: /Mobi|Android/i.test(navigator.userAgent)
     });
     setImageError(true);
     toast.error("Não foi possível carregar uma imagem. Por favor, atualize a página.");
@@ -26,7 +28,8 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
   const handleImageLoad = () => {
     console.log("Imagem carregada com sucesso:", {
       url: photo,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userAgent: window.navigator.userAgent
     });
     setIsLoading(false);
   };

@@ -17,7 +17,9 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
     console.error("Falha ao carregar imagem no modal:", {
       url: photo,
       error: "Imagem não carregou",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userAgent: window.navigator.userAgent,
+      isMobile: /Mobi|Android/i.test(navigator.userAgent)
     });
     setImageError(true);
     toast.error("Não foi possível carregar a imagem em tamanho grande");
@@ -26,7 +28,8 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
   const handleImageLoad = () => {
     console.log("Imagem do modal carregada com sucesso:", {
       url: photo,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userAgent: window.navigator.userAgent
     });
     setIsLoading(false);
   };
