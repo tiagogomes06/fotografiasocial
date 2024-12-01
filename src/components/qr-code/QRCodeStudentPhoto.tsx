@@ -9,7 +9,12 @@ const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) 
   const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
-    console.error("Failed to load QR code student photo:", photoUrl);
+    console.error("Failed to load QR code student photo:", {
+      url: photoUrl,
+      error: "Image failed to load",
+      studentName: studentName,
+      timestamp: new Date().toISOString()
+    });
     setImageError(true);
   };
 
@@ -17,7 +22,7 @@ const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) 
     return (
       <div className="w-32 h-32 mx-auto overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
         <span className="text-sm text-gray-500 text-center px-2">
-          Foto não disponível
+          Foto não disponível. Por favor, tente novamente mais tarde.
         </span>
       </div>
     );
@@ -32,6 +37,13 @@ const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) 
         crossOrigin="anonymous"
         loading="lazy"
         onError={handleImageError}
+        onLoad={() => {
+          console.log("Successfully loaded student photo:", {
+            url: photoUrl,
+            studentName: studentName,
+            timestamp: new Date().toISOString()
+          });
+        }}
       />
     </div>
   );
