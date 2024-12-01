@@ -1,8 +1,8 @@
-import { emailStyles } from './templates/styles';
-import { createOrderDetailsSection } from './templates/orderDetails';
-import { createShippingSection } from './templates/shippingDetails';
-import { createProductsSection } from './templates/productsSection';
-import { createPaymentSection } from './templates/paymentDetails';
+import { emailStyles } from './templates/styles.ts';
+import { createOrderDetailsSection } from './templates/orderDetails.ts';
+import { createShippingSection } from './templates/shippingDetails.ts';
+import { createProductsSection } from './templates/productsSection.ts';
+import { createPaymentSection } from './templates/paymentDetails.ts';
 
 export const createEmailTemplate = (order: any, type: 'created' | 'paid', isAdmin: boolean, paymentDetails?: any) => {
   const getStatusMessage = () => {
