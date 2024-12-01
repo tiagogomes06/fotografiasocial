@@ -138,6 +138,19 @@ const CheckoutForm = ({ cart }: CheckoutFormProps) => {
               duration: 10000
             });
           } else {
+            // Send order confirmation email for MBWay payments
+            try {
+              await supabase.functions.invoke("send-order-email", {
+                body: {
+                  orderId: order.id,
+                  type: "created"
+                }
+              });
+            } catch (error) {
+              console.error('Error sending order confirmation email:', error);
+              toast.error('Erro ao enviar email de confirmação');
+            }
+
             navigate("/mbway-confirmation", {
               state: { orderDetails }
             });
