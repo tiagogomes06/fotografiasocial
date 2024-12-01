@@ -126,8 +126,8 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden">
-                  <div className="relative w-full h-full flex items-center justify-center">
+                <DialogContent className="max-w-[95vw] w-auto p-0 overflow-hidden">
+                  <div className="relative w-full h-full flex items-center justify-center bg-black/50">
                     <img
                       src={photo}
                       alt={`Foto ${index + 1}`}
@@ -140,7 +140,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                       }}
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                      className="absolute top-4 right-4 rounded-full bg-black/50 hover:bg-black/70 text-white"
                     >
                       <X className="h-4 w-4" />
                     </Button>
