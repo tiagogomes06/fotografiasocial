@@ -20,7 +20,7 @@ interface CheckoutFormProps {
   onBack: () => void;
 }
 
-const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
+const CheckoutForm = ({ cart }: CheckoutFormProps) => {
   const navigate = useNavigate();
   const [shippingMethod, setShippingMethod] = useState("");
   const [formData, setFormData] = useState({
@@ -176,7 +176,7 @@ const CheckoutForm = ({ cart, onBack }: CheckoutFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
       <div className="space-y-6">
-        <CheckoutHeader onBack={onBack} isProcessing={isProcessing} />
+        <CheckoutHeader isProcessing={isProcessing} />
 
         <div className="space-y-8">
           <ShippingForm

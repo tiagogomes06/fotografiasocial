@@ -1,5 +1,3 @@
-import { ArrowLeft } from "lucide-react";
-
 interface CheckoutHeaderProps {
   isProcessing: boolean;
 }
