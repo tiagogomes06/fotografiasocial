@@ -22,6 +22,14 @@ const ProductSelect = ({
     onProductSelect(productId, newQuantity);
   };
 
+  const handleProductClick = (productId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentQuantity = selectedProducts[productId] || 0;
+    const newQuantity = currentQuantity === 0 ? 1 : 0;
+    onProductSelect(productId, newQuantity);
+  };
+
   return (
     <div className="space-y-3 animate-fade-up">
       <h2 className="text-sm font-medium text-muted-foreground">Escolha os produtos:</h2>
@@ -33,8 +41,9 @@ const ProductSelect = ({
           return (
             <div
               key={product.id}
+              onClick={(e) => handleProductClick(product.id, e)}
               className={cn(
-                "relative p-3 rounded-lg text-left transition-all duration-200",
+                "relative p-3 rounded-lg text-left transition-all duration-200 cursor-pointer",
                 "bg-white/50 hover:bg-white shadow-sm border border-border/50",
                 isSelected && "ring-2 ring-primary bg-white"
               )}
@@ -48,27 +57,29 @@ const ProductSelect = ({
                     {product.price}€
                   </p>
                   
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleQuantityChange(product.id, -1, e)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-8 text-center">{quantity}</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => handleQuantityChange(product.id, 1, e)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {isSelected && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => handleQuantityChange(product.id, -1, e)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center">{quantity}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => handleQuantityChange(product.id, 1, e)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 
                 <div className={cn(
