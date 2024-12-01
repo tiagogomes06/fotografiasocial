@@ -46,30 +46,23 @@ export const uploadPhoto = async (file: File, studentId: string) => {
       throw new Error(errorMsg);
     }
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    console.log('Nome do arquivo gerado:', fileName);
+    // Upload para o S3 através da Edge Function
+    const formData = new FormData();
+    formData.append('file', file);
 
-    // Upload para o bucket 'photos'
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('photos')
-      .upload(fileName, file, {
-        contentType: file.type,
-        upsert: false
-      });
+    const response = await fetch('https://iomjazjwpcmosxinznyu.supabase.co/functions/v1/s3-upload', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+    });
 
-    if (uploadError) {
-      console.error('Erro no upload para Storage:', uploadError);
-      toast.error(`Erro no upload: ${uploadError.message}`);
-      throw uploadError;
+    if (!response.ok) {
+      throw new Error('Falha no upload para S3');
     }
 
-    console.log('Upload concluído:', uploadData);
-
-    // Obter URL pública
-    const { data: { publicUrl } } = supabase.storage
-      .from('photos')
-      .getPublicUrl(fileName);
+    const { url: publicUrl } = await response.json();
 
     console.log('URL pública gerada:', publicUrl);
 
