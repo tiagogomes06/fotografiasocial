@@ -24,12 +24,20 @@ const Store = () => {
   } = useStore();
 
   useEffect(() => {
+    // Check if we have the required state
+    if (!photos.length || !location.state) {
+      toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
+      navigate('/', { replace: true });
+      return;
+    }
+
     const studentId = localStorage.getItem('studentId');
     if (!studentId) {
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
-      navigate('/');
+      navigate('/', { replace: true });
+      return;
     }
-  }, [navigate]);
+  }, [navigate, location.state, photos.length]);
 
   const handleCartNavigation = () => {
     navigate('/cart', { 

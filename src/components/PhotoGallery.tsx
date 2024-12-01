@@ -33,7 +33,15 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       navigate('/');
       return;
     }
-    navigate('/store', { state: { photos: uniquePhotos, studentName, studentId } });
+    // Pass the processed photos to maintain consistency
+    navigate('/store', { 
+      state: { 
+        photos: uniquePhotos, 
+        studentName, 
+        studentId 
+      },
+      replace: true // Add replace: true to prevent navigation loop
+    });
   };
 
   return (

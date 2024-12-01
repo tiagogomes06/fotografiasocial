@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Dialog, DialogTrigger } from "../ui/dialog";
 import { Card, CardContent } from "../ui/card";
 import PhotoModal from "./PhotoModal";
@@ -8,6 +9,20 @@ interface PhotoCardProps {
 }
 
 const PhotoCard = ({ photo, index }: PhotoCardProps) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <Card className="group overflow-hidden bg-white/95 backdrop-blur-sm border shadow-md hover:shadow-xl transition-all duration-300 rounded-xl">
+        <CardContent className="p-4 space-y-3">
+          <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+            <span className="text-sm text-gray-500">Imagem não disponível</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="group overflow-hidden bg-white/95 backdrop-blur-sm border shadow-md hover:shadow-xl transition-all duration-300 rounded-xl">
       <CardContent className="p-4 space-y-3">
@@ -22,6 +37,7 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
                 draggable="false"
                 crossOrigin="anonymous"
                 loading="lazy"
+                onError={() => setImageError(true)}
               />
             </div>
           </DialogTrigger>
