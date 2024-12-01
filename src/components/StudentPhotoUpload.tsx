@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhoto } from "@/utils/supabaseHelpers";
 import { Progress } from "@/components/ui/progress";
+import imageCompression from "browser-image-compression";
 
 interface StudentPhotoUploadProps {
   studentId: string;
@@ -16,6 +17,23 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState<string>("");
+
+  const compressImage = async (file: File) => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      return compressedFile;
+    } catch (error) {
+      console.error("Erro na compressão:", error);
+      return file;
+    }
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -25,21 +43,41 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
     setUploadProgress(0);
     
     try {
-      const totalFiles = files.length;
+      const fileArray = Array.from(files);
+      const totalFiles = fileArray.length;
       let completedFiles = 0;
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // Processar arquivos em paralelo
+      const uploadPromises = fileArray.map(async (file, index) => {
         if (!file.type.startsWith('image/')) {
           toast.error(`O ficheiro ${file.name} não é uma imagem`);
-          continue;
+          return null;
         }
 
-        const photo = await uploadPhoto(file, studentId);
-        await onPhotoUploaded(photo.url);
+        setCurrentFile(file.name);
+        
+        // Comprimir imagem
+        const compressedFile = await compressImage(file);
+        
+        const photo = await uploadPhoto(compressedFile, studentId);
         completedFiles++;
         setUploadProgress((completedFiles / totalFiles) * 100);
-        toast.success(`Fotografia ${file.name} carregada com sucesso`);
+        
+        return photo;
+      });
+
+      const results = await Promise.all(uploadPromises);
+      
+      // Filtrar uploads bem sucedidos e notificar
+      const successfulUploads = results.filter(result => result !== null);
+      successfulUploads.forEach(photo => {
+        if (photo) {
+          onPhotoUploaded(photo.url);
+        }
+      });
+
+      if (successfulUploads.length > 0) {
+        toast.success(`${successfulUploads.length} fotografias carregadas com sucesso`);
       }
 
       setIsOpen(false);
@@ -49,6 +87,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+      setCurrentFile("");
     }
   };
 
@@ -78,11 +117,17 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
               <Progress value={uploadProgress} />
               <p className="text-sm text-muted-foreground text-center">
                 A carregar... {Math.round(uploadProgress)}%
+                {currentFile && (
+                  <span className="block text-xs">
+                    Processando: {currentFile}
+                  </span>
+                )}
               </p>
             </div>
           )}
           <p className="text-sm text-muted-foreground">
             Formatos suportados: JPG, PNG, GIF. Pode selecionar várias fotografias.
+            As imagens serão automaticamente otimizadas para melhor performance.
           </p>
         </div>
       </DialogContent>
