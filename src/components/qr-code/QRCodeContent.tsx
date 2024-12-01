@@ -60,6 +60,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
     <div 
       ref={containerRef}
       className="flex flex-col items-center justify-center p-6 space-y-4 bg-white"
+      style={{ minWidth: '400px' }}
     >
       <img 
         src="https://fotografiasocial.duploefeito.com/logo.jpg"
@@ -74,9 +75,9 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
 
       {schoolInfo && (
         <div className="text-center space-y-1">
-          <p className="font-semibold">{schoolInfo.schoolName}</p>
-          <p>{schoolInfo.className}</p>
-          <p>{studentName}</p>
+          <p className="font-semibold text-lg">{schoolInfo.schoolName}</p>
+          <p className="text-base">{schoolInfo.className}</p>
+          <p className="text-base font-medium">{studentName}</p>
         </div>
       )}
 

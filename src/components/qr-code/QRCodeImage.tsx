@@ -15,15 +15,21 @@ const QRCodeImage = ({ qrValue, containerRef, studentName }: QRCodeImageProps) =
       if (!container) return;
 
       try {
+        // Wait a bit for images to load before capturing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const canvas = await html2canvas(container, {
           backgroundColor: "white",
           scale: 2,
           useCORS: true,
           allowTaint: true,
+          logging: true,
           onclone: function(clonedDoc) {
             const images = clonedDoc.getElementsByTagName('img');
             for (let img of images) {
               img.crossOrigin = "anonymous";
+              // Make sure images are visible in clone
+              img.style.display = 'block';
             }
           }
         });
