@@ -18,7 +18,11 @@ const ProductSelect = ({
 }: ProductSelectProps) => {
   const handleProductSelect = (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    onProductSelect(productId, quantity);
+    if (selectedProduct === productId) {
+      onProductSelect(productId, quantity);
+    } else {
+      onProductSelect(productId, 1); // Reset quantity when selecting new product
+    }
   };
 
   const handleQuantityChange = (productId: string, newQuantity: number, e: React.MouseEvent) => {

@@ -30,6 +30,10 @@ const PhotoCard = ({
     setShowProducts(true);
   };
 
+  const handleProductSelect = (productId: string, newQuantity: number) => {
+    onProductSelect(productId, newQuantity);
+  };
+
   return (
     <Card className="overflow-hidden group relative">
       <div
@@ -53,7 +57,7 @@ const PhotoCard = ({
         <div className="p-3 animate-in slide-in-from-top-2">
           <ProductSelect
             selectedProduct={selectedProduct}
-            onProductSelect={onProductSelect}
+            onProductSelect={handleProductSelect}
             products={products}
             quantity={quantity}
           />
