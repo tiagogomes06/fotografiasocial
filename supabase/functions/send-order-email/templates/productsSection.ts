@@ -6,6 +6,10 @@ export const createProductsSection = (order: any, isAdmin: boolean) => {
     photoUrl: item.photos?.url || '',
   })) || [];
 
+  const subtotal = orderItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const shippingCost = order.shipping_methods?.price || 0;
+  const total = subtotal + shippingCost;
+
   return `
     <div class="section">
       <h2>Produtos</h2>
@@ -27,6 +31,21 @@ export const createProductsSection = (order: any, isAdmin: boolean) => {
           ` : ''}
         </div>
       `).join('')}
+      
+      <div class="totals-section" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+        <div class="info-row">
+          <span>Subtotal:</span>
+          <strong>${subtotal.toFixed(2)}€</strong>
+        </div>
+        <div class="info-row">
+          <span>Portes de Envio:</span>
+          <strong>${shippingCost.toFixed(2)}€</strong>
+        </div>
+        <div class="info-row" style="font-size: 1.1em; margin-top: 10px;">
+          <span>Total:</span>
+          <strong>${total.toFixed(2)}€</strong>
+        </div>
+      </div>
     </div>
   `;
 };

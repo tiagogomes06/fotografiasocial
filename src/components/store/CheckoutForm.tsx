@@ -117,7 +117,7 @@ const CheckoutForm = ({ cart }: CheckoutFormProps) => {
         
         const orderItems = cart.map(item => ({
           name: products.find(p => p.id === item.productId)?.name || "Fotografia",
-          quantity: 1,
+          quantity: item.quantity || 1,
           price: item.price
         }));
 
