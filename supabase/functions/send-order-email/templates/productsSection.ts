@@ -1,14 +1,17 @@
 export const createProductsSection = (order: any, isAdmin: boolean) => {
   const orderItems = order.order_items?.map((item: any) => ({
     quantity: item.quantity || 1,
-    price: item.price_at_time || 0,
+    price: Number(item.price_at_time || 0).toFixed(2),
     name: item.products?.name || 'Fotografia',
     photoUrl: item.photos?.url || '',
   })) || [];
 
-  const subtotal = orderItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-  const shippingCost = order.shipping_methods?.price || 0;
-  const total = subtotal + shippingCost;
+  const subtotal = orderItems.reduce((sum: number, item: any) => 
+    sum + (Number(item.price) * item.quantity), 0
+  ).toFixed(2);
+  
+  const shippingCost = Number(order.shipping_methods?.price || 0).toFixed(2);
+  const total = (Number(subtotal) + Number(shippingCost)).toFixed(2);
 
   return `
     <div class="section">
@@ -25,7 +28,7 @@ export const createProductsSection = (order: any, isAdmin: boolean) => {
           </div>
           <div class="info-row">
             <span>Preço: </span>
-            <strong>${Number(item.price).toFixed(2)}€</strong>
+            <strong>${item.price}€</strong>
           </div>
           ${isAdmin && item.photoUrl ? `
             <div class="photo-link-container">
@@ -41,15 +44,15 @@ export const createProductsSection = (order: any, isAdmin: boolean) => {
       <div class="totals-section">
         <div class="info-row">
           <span>Subtotal: </span>
-          <strong>${subtotal.toFixed(2)}€</strong>
+          <strong>${subtotal}€</strong>
         </div>
         <div class="info-row">
           <span>Portes de Envio: </span>
-          <strong>${shippingCost.toFixed(2)}€</strong>
+          <strong>${shippingCost}€</strong>
         </div>
         <div class="info-row">
           <span>Total: </span>
-          <strong>${total.toFixed(2)}€</strong>
+          <strong>${total}€</strong>
         </div>
       </div>
     </div>

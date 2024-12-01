@@ -16,6 +16,10 @@ export const createOrderDetailsSection = (order: any) => {
         <span>Data: </span>
         <strong>${orderDate}</strong>
       </div>
+      <div class="info-row">
+        <span>Email: </span>
+        <strong>${order.email}</strong>
+      </div>
       ${order.tax_number ? `
       <div class="info-row">
         <span>NIF: </span>

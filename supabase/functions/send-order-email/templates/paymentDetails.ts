@@ -10,8 +10,8 @@ export const createPaymentSection = (order: any, paymentDetails?: any) => {
     ? paymentDetails.reference.match(/.{1,3}/g).join(' ')
     : '';
 
-  // Ensure proper decimal formatting
-  const formattedAmount = Number(paymentDetails.amount).toFixed(2);
+  // Ensure proper decimal formatting for the amount
+  const formattedAmount = (Number(paymentDetails.amount) || 0).toFixed(2);
 
   return `
     <div class="section payment-details">
