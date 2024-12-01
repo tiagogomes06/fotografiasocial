@@ -94,11 +94,10 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
           <span className="mx-2">:</span>
           <span>{accessCode}</span>
         </p>
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Site para acesso</span>
-          <span className="mx-2">:</span>
-          <span>fotografiasocial.duploefeito.com</span>
-        </p>
+        <div className="text-sm text-gray-600">
+          <p className="font-medium">Site para</p>
+          <p>acesso : fotografiasocial.duploefeito.com</p>
+        </div>
       </div>
     </div>
   );
