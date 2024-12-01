@@ -37,7 +37,11 @@ export const createStudent = async (name: string, classId: string, accessCode: s
 
 export const uploadPhoto = async (file: File, studentId: string) => {
   try {
-    console.log('Iniciando upload da foto:', { fileName: file.name, fileSize: file.size, fileType: file.type });
+    console.log('Iniciando upload da foto:', { 
+      fileName: file.name, 
+      fileSize: file.size, 
+      fileType: file.type 
+    });
 
     if (!file.type.startsWith('image/')) {
       const errorMsg = `Tipo de arquivo inválido: ${file.type}. Apenas imagens são permitidas.`;
@@ -50,20 +54,21 @@ export const uploadPhoto = async (file: File, studentId: string) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('https://iomjazjwpcmosxinznyu.supabase.co/functions/v1/s3-upload', {
-      method: 'POST',
+    const response = await supabase.functions.invoke('s3-upload', {
       body: formData,
-      headers: {
-        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
     });
 
-    if (!response.ok) {
-      throw new Error('Falha no upload para S3');
+    if (response.error) {
+      console.error('Erro na Edge Function:', response.error);
+      throw new Error(`Erro no upload: ${response.error.message}`);
     }
 
-    const { url: publicUrl } = await response.json();
+    if (!response.data?.url) {
+      console.error('Resposta inválida da Edge Function:', response.data);
+      throw new Error('URL da foto não retornada pelo servidor');
+    }
 
+    const publicUrl = response.data.url;
     console.log('URL pública gerada:', publicUrl);
 
     // Criar registro na tabela photos
