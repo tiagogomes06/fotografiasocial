@@ -15,16 +15,25 @@ const QRCodeImage = ({ qrValue, containerRef, studentName }: QRCodeImageProps) =
       if (!container) return;
 
       try {
-        // Pre-load the logo image before capturing
-        const logoImg = new Image();
-        logoImg.crossOrigin = "anonymous";
-        logoImg.src = "/logo.jpg";
+        // Pre-load all images before capturing
+        const images = container.getElementsByTagName('img');
+        await Promise.all(
+          Array.from(images).map((img) => {
+            return new Promise((resolve) => {
+              if (img.complete) {
+                resolve(null);
+              } else {
+                img.onload = () => resolve(null);
+                img.onerror = () => resolve(null);
+              }
+              // Ensure crossOrigin is set for all images
+              img.crossOrigin = "anonymous";
+            });
+          })
+        );
 
-        // Wait for logo to load and a bit extra time for other elements
-        await new Promise((resolve) => {
-          logoImg.onload = () => setTimeout(resolve, 500);
-          logoImg.onerror = () => resolve(null);
-        });
+        // Add a small delay to ensure everything is rendered
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const canvas = await html2canvas(container, {
           backgroundColor: "white",
@@ -33,8 +42,8 @@ const QRCodeImage = ({ qrValue, containerRef, studentName }: QRCodeImageProps) =
           allowTaint: true,
           logging: false,
           onclone: function(clonedDoc) {
-            const images = clonedDoc.getElementsByTagName('img');
-            for (let img of images) {
+            const clonedImages = clonedDoc.getElementsByTagName('img');
+            for (let img of clonedImages) {
               img.crossOrigin = "anonymous";
               img.style.display = 'block';
             }
