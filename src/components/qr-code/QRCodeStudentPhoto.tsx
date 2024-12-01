@@ -7,11 +7,11 @@ interface QRCodeStudentPhotoProps {
 
 const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) => {
   return (
-    <div className="w-32 h-32 overflow-hidden rounded-lg">
+    <div className="w-24 h-24 mx-auto overflow-hidden rounded-lg bg-gray-100">
       <img 
         src={photoUrl} 
         alt={studentName}
-        className="w-full h-full object-contain bg-gray-100"
+        className="w-full h-full object-contain"
         crossOrigin="anonymous"
         onError={(e) => {
           const img = e.target as HTMLImageElement;
