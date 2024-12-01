@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand, GetObjectCommand } from "npm:@aws-sdk/client-s3"
-import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner"
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,20 +74,14 @@ serve(async (req) => {
     const uploadResult = await s3Client.send(new PutObjectCommand(uploadParams));
     console.log('S3 upload result:', uploadResult);
 
-    // Generate a pre-signed URL for the uploaded file
-    const getObjectParams = {
-      Bucket: BUCKET_NAME,
-      Key: fileName,
-    };
-    const command = new GetObjectCommand(getObjectParams);
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 * 24 * 7 }); // URL válida por 7 dias
-
-    console.log('Generated signed URL:', signedUrl);
+    // Generate a direct public URL
+    const s3Url = `https://${BUCKET_NAME}.s3.${Deno.env.get('AWS_REGION') ?? 'eu-west-1'}.amazonaws.com/${fileName}`;
+    console.log('Generated S3 URL:', s3Url);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: signedUrl
+        url: s3Url
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
