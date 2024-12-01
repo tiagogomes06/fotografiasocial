@@ -42,7 +42,7 @@ const PhotoCard = ({
   };
 
   return (
-    <Card className="overflow-hidden group relative">
+    <Card className="group overflow-hidden relative">
       <div
         className={cn(
           "aspect-square relative cursor-pointer",
