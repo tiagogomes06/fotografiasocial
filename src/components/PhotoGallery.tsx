@@ -126,12 +126,12 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-[95vw] w-auto p-0 overflow-hidden">
-                  <div className="relative w-full h-full flex items-center justify-center bg-black/50">
+                <DialogContent className="max-w-[95vw] w-auto p-0 bg-transparent border-none">
+                  <div className="relative w-full h-[90vh] flex items-center justify-center bg-black/80">
                     <img
                       src={photo}
                       alt={`Foto ${index + 1}`}
-                      className="max-w-full max-h-[85vh] object-contain"
+                      className="max-w-full max-h-full object-contain"
                     />
                     <Button
                       onClick={() => {
@@ -140,7 +140,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                       }}
                       variant="ghost"
                       size="icon"
-                      className="absolute top-4 right-4 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                      className="absolute top-4 right-4 rounded-full bg-white/10 hover:bg-white/20 text-white"
                     >
                       <X className="h-4 w-4" />
                     </Button>
