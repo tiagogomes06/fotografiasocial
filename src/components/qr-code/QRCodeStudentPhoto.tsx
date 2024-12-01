@@ -8,6 +8,11 @@ interface QRCodeStudentPhotoProps {
 const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) => {
   const [imageError, setImageError] = useState(false);
 
+  const handleImageError = () => {
+    console.error("Failed to load QR code student photo:", photoUrl);
+    setImageError(true);
+  };
+
   if (imageError) {
     return (
       <div className="w-32 h-32 mx-auto overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
@@ -26,7 +31,7 @@ const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) 
         className="max-w-full max-h-full object-contain"
         crossOrigin="anonymous"
         loading="lazy"
-        onError={() => setImageError(true)}
+        onError={handleImageError}
       />
     </div>
   );

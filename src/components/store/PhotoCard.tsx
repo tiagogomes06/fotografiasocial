@@ -26,7 +26,14 @@ const PhotoCard = ({
   const [imageError, setImageError] = useState(false);
 
   const handleClick = () => {
-    onSelect(photo);
+    if (!imageError) {
+      onSelect(photo);
+    }
+  };
+
+  const handleImageError = () => {
+    console.error("Failed to load store image:", photo);
+    setImageError(true);
   };
 
   const handleProductSelect = (productId: string, quantity: number) => {
@@ -40,7 +47,7 @@ const PhotoCard = ({
   if (imageError) {
     return (
       <Card className="group overflow-hidden relative">
-        <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-400">
+        <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-500">
           Imagem não disponível
         </div>
       </Card>
@@ -64,7 +71,7 @@ const PhotoCard = ({
           draggable="false"
           crossOrigin="anonymous"
           loading="lazy"
-          onError={() => setImageError(true)}
+          onError={handleImageError}
         />
         {isSelected && (
           <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-in fade-in-0" />
