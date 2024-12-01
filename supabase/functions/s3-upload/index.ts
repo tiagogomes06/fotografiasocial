@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const s3Client = new S3Client({
-  region: Deno.env.get('AWS_REGION') ?? 'eu-west-1',
+  region: 'eu-west-1', // Changed to Ireland region
   credentials: {
     accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
     secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
@@ -71,7 +71,7 @@ serve(async (req) => {
 
     await s3Client.send(new PutObjectCommand(uploadParams));
     
-    const s3Url = `https://${BUCKET_NAME}.s3.${Deno.env.get('AWS_REGION')}.amazonaws.com/photos/${fileName}`;
+    const s3Url = `https://${BUCKET_NAME}.s3.eu-west-1.amazonaws.com/photos/${fileName}`;
     console.log('Generated S3 URL:', s3Url);
 
     return new Response(
