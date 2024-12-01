@@ -9,14 +9,19 @@ import StoreHeader from "@/components/store/StoreHeader";
 import StoreInstructions from "@/components/store/StoreInstructions";
 import StoreBottomBar from "@/components/store/StoreBottomBar";
 
+interface ProductSelections {
+  [photoUrl: string]: {
+    [productId: string]: number;
+  };
+}
+
 const Store = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { photos = [], studentName, studentId: initialStudentId } = location.state || {};
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [productSelections, setProductSelections] = useState<Record<string, string>>({});
+  const [productSelections, setProductSelections] = useState<ProductSelections>({});
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const studentId = localStorage.getItem('studentId');
@@ -55,18 +60,32 @@ const Store = () => {
     }
   };
 
-  const handleProductSelect = (photoUrl: string, productId: string) => {
+  const handleProductSelect = (photoUrl: string, productId: string, quantity: number) => {
     setProductSelections(prev => ({
       ...prev,
-      [photoUrl]: productId
+      [photoUrl]: {
+        ...(prev[photoUrl] || {}),
+        [productId]: quantity
+      }
     }));
   };
 
-  const handleQuantityChange = (photoUrl: string, quantity: number) => {
-    setProductQuantities(prev => ({
-      ...prev,
-      [photoUrl]: quantity
-    }));
+  const handleProductDeselect = (photoUrl: string, productId: string) => {
+    setProductSelections(prev => {
+      const photoSelections = { ...prev[photoUrl] };
+      delete photoSelections[productId];
+      
+      if (Object.keys(photoSelections).length === 0) {
+        const newSelections = { ...prev };
+        delete newSelections[photoUrl];
+        return newSelections;
+      }
+      
+      return {
+        ...prev,
+        [photoUrl]: photoSelections
+      };
+    });
   };
 
   const extractPhotoId = (photoUrl: string) => {
@@ -121,24 +140,30 @@ const Store = () => {
 
     const validItems: CartItem[] = [];
     
-    for (const photo of selectedPhotos.filter(photo => productSelections[photo])) {
-      const product = products.find(p => p.id === productSelections[photo]);
-      const photoId = await getOrCreatePhoto(photo, studentId);
-      const quantity = productQuantities[photo] || 1;
+    for (const photoUrl of selectedPhotos) {
+      const photoSelections = productSelections[photoUrl] || {};
+      const photoId = await getOrCreatePhoto(photoUrl, studentId);
       
       if (!photoId) {
-        toast.error(`Erro ao processar foto: ${photo}`);
+        toast.error(`Erro ao processar foto: ${photoUrl}`);
         continue;
       }
 
-      validItems.push({
-        photoUrl: photo,
-        photoId: photoId,
-        productId: productSelections[photo],
-        studentId: studentId,
-        price: product?.price || 0,
-        quantity: quantity
-      });
+      for (const [productId, quantity] of Object.entries(photoSelections)) {
+        if (quantity > 0) {
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            validItems.push({
+              photoUrl,
+              photoId,
+              productId,
+              studentId,
+              price: product.price,
+              quantity
+            });
+          }
+        }
+      }
     }
 
     if (validItems.length > 0) {
@@ -146,7 +171,6 @@ const Store = () => {
       setCart(newCart);
       setSelectedPhotos([]);
       setProductSelections({});
-      setProductQuantities({});
       toast.success("Itens adicionados ao carrinho");
     }
   };
@@ -176,10 +200,14 @@ const Store = () => {
               photo={photo}
               isSelected={selectedPhotos.includes(photo)}
               onSelect={handlePhotoSelect}
-              selectedProduct={productSelections[photo]}
-              onProductSelect={(productId) => handleProductSelect(photo, productId)}
+              selectedProducts={productSelections[photo] || {}}
+              onProductSelect={(productId, quantity) => 
+                handleProductSelect(photo, productId, quantity)
+              }
+              onProductDeselect={(productId) => 
+                handleProductDeselect(photo, productId)
+              }
               products={products}
-              onQuantityChange={(quantity) => handleQuantityChange(photo, quantity)}
             />
           ))}
         </div>
@@ -188,7 +216,10 @@ const Store = () => {
           <StoreBottomBar
             selectedCount={selectedPhotos.length}
             onAddToCart={addToCart}
-            disabled={selectedPhotos.some(photo => !productSelections[photo])}
+            disabled={selectedPhotos.some(photo => 
+              !productSelections[photo] || 
+              Object.values(productSelections[photo]).every(quantity => quantity === 0)
+            )}
           />
         )}
       </div>

@@ -8,37 +8,34 @@ interface PhotoCardProps {
   photo: string;
   isSelected: boolean;
   onSelect: (photoUrl: string) => void;
-  selectedProduct?: string;
+  selectedProducts?: { [key: string]: number };
   onProductSelect: (productId: string, quantity: number) => void;
+  onProductDeselect: (productId: string) => void;
   products: Product[];
-  quantity?: number;
-  onQuantityChange?: (quantity: number) => void;
 }
 
 const PhotoCard = ({
   photo,
   isSelected,
   onSelect,
-  selectedProduct,
+  selectedProducts = {},
   onProductSelect,
+  onProductDeselect,
   products,
-  quantity = 1,
-  onQuantityChange
 }: PhotoCardProps) => {
   const [showProducts, setShowProducts] = useState(false);
-  const [currentQuantity, setCurrentQuantity] = useState(quantity);
 
   const handleClick = () => {
     onSelect(photo);
     setShowProducts(true);
   };
 
-  const handleProductSelect = (productId: string, newQuantity: number) => {
-    setCurrentQuantity(newQuantity);
-    if (onQuantityChange) {
-      onQuantityChange(newQuantity);
+  const handleProductSelect = (productId: string, quantity: number) => {
+    if (quantity === 0) {
+      onProductDeselect(productId);
+    } else {
+      onProductSelect(productId, quantity);
     }
-    onProductSelect(productId, newQuantity);
   };
 
   return (
@@ -65,10 +62,9 @@ const PhotoCard = ({
       {isSelected && showProducts && (
         <div className="p-3 animate-in slide-in-from-top-2">
           <ProductSelect
-            selectedProduct={selectedProduct}
+            selectedProducts={selectedProducts}
             onProductSelect={handleProductSelect}
             products={products}
-            quantity={currentQuantity}
           />
         </div>
       )}
