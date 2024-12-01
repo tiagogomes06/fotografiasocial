@@ -7,6 +7,11 @@
   ],
   "routes": [
     {
+      "src": "/admin.*",
+      "dest": "/",
+      "status": 200
+    },
+    {
       "src": "/[^.]+",
       "dest": "/",
       "status": 200
@@ -19,6 +24,10 @@
         {
           "key": "Cache-Control",
           "value": "s-maxage=1, stale-while-revalidate"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
         }
       ]
     }
