@@ -62,7 +62,10 @@ serve(async (req) => {
       Key: fileName,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
-      ACL: 'public-read', // Define o arquivo como público durante o upload
+      ACL: 'public-read',
+      Metadata: {
+        'x-amz-acl': 'public-read',
+      },
     };
 
     console.log('Uploading to S3:', {
@@ -86,7 +89,10 @@ serve(async (req) => {
         url: s3Url
       }),
       { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+        }, 
         status: 200 
       }
     );
@@ -105,7 +111,7 @@ serve(async (req) => {
         type: error.name
       }),
       { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 
       }
     );
