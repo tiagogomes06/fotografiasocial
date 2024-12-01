@@ -14,39 +14,8 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const navigate = useNavigate();
   const schoolInfo = useSchoolInfo();
 
-  // Ensure all photos are using S3 URLs and are valid
-  const processedPhotos = photos
-    .filter(Boolean) // Remove any null/undefined values
-    .map(photo => {
-      try {
-        // If it's already an S3 URL, return it
-        if (photo.includes('amazonaws.com')) {
-          return photo;
-        }
-        
-        // If it's a Supabase URL or just a filename, extract the filename
-        const filename = photo.includes('supabase') 
-          ? photo.split('/').pop()
-          : photo.includes('/') 
-            ? photo.split('/').pop() 
-            : photo;
-
-        if (!filename) {
-          console.error('Invalid photo URL:', photo);
-          return null;
-        }
-
-        // Construct S3 URL
-        return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
-      } catch (error) {
-        console.error('Error processing photo URL:', photo, error);
-        return null;
-      }
-    })
-    .filter(Boolean) as string[]; // Remove any null values after processing
-
-  // Remove duplicates from photos array
-  const uniquePhotos = [...new Set(processedPhotos)];
+  // Remove duplicates from photos array and filter out any invalid URLs
+  const uniquePhotos = [...new Set(photos.filter(Boolean))];
 
   const goToStore = () => {
     const studentId = localStorage.getItem('studentId');
@@ -56,7 +25,6 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       return;
     }
 
-    // Pass the processed photos to maintain consistency
     navigate('/store', { 
       state: { 
         photos: uniquePhotos, 

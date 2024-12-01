@@ -47,15 +47,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
 
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
-          let photoUrl = data.photos[randomIndex].url;
-          
-          // Convert Supabase URL to S3 URL if needed
-          if (photoUrl.includes('supabase')) {
-            const filename = photoUrl.split('/').pop();
-            photoUrl = `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
-          }
-          
-          setRandomPhoto(photoUrl);
+          setRandomPhoto(data.photos[randomIndex].url);
         }
       }
     };

@@ -24,20 +24,9 @@ const PhotoGallery = ({
   onProductSelect,
   onProductDeselect,
 }: PhotoGalleryProps) => {
-  // Process photos to ensure S3 URLs
-  const processedPhotos = photos.map(photo => {
-    if (photo.includes('supabase')) {
-      // Extract filename from Supabase URL
-      const filename = photo.split('/').pop();
-      // Construct S3 URL
-      return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
-    }
-    return photo;
-  });
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
-      {processedPhotos.map((photo: string, index: number) => (
+      {photos.map((photo: string, index: number) => (
         <PhotoCard
           key={index}
           photo={photo}
