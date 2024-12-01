@@ -126,23 +126,24 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] h-auto max-h-[90vh] p-0">
-                  <div className="relative">
+                <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden">
+                  <div className="relative w-full h-full flex items-center justify-center">
                     <img
                       src={photo}
                       alt={`Foto ${index + 1}`}
-                      className="w-full h-full object-contain rounded-lg"
+                      className="max-w-full max-h-[85vh] object-contain"
                     />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                    <Button
+                      onClick={() => {
                         const closeButton = document.querySelector('[data-dialog-close]') as HTMLButtonElement;
                         if (closeButton) closeButton.click();
                       }}
-                      className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 rounded-full bg-black/50 hover:bg-black/70 text-white"
                     >
-                      <X className="h-6 w-6" />
-                    </button>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>

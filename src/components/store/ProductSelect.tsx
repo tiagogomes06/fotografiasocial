@@ -16,6 +16,10 @@ const ProductSelect = ({
   products,
   quantity = 1
 }: ProductSelectProps) => {
+  const handleProductSelect = (productId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onProductSelect(productId, quantity);
+  };
 
   const handleQuantityChange = (productId: string, newQuantity: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,7 +36,7 @@ const ProductSelect = ({
         {products.map((product) => (
           <div
             key={product.id}
-            onClick={() => onProductSelect(product.id, quantity)}
+            onClick={(e) => handleProductSelect(product.id, e)}
             className={cn(
               "relative p-3 rounded-lg text-left transition-all duration-200 cursor-pointer",
               "bg-white/50 hover:bg-white shadow-sm border border-border/50",
