@@ -40,6 +40,13 @@ const Store = () => {
     });
   };
 
+  // Calculate total selected products by summing up quantities
+  const totalSelectedProducts = selectedPhotos.reduce((total, photoUrl) => {
+    const photoSelections = productSelections[photoUrl] || {};
+    const photoTotal = Object.values(photoSelections).reduce((sum, quantity) => sum + quantity, 0);
+    return total + photoTotal;
+  }, 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
@@ -61,7 +68,7 @@ const Store = () => {
 
         {selectedPhotos.length > 0 && (
           <StoreBottomBar
-            selectedCount={selectedPhotos.length}
+            selectedCount={totalSelectedProducts}
             onAddToCart={addToCart}
             disabled={selectedPhotos.some(photo => 
               !productSelections[photo] || 
