@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import StoreHeader from "@/components/store/StoreHeader";
 import StoreInstructions from "@/components/store/StoreInstructions";
 import StoreBottomBar from "@/components/store/StoreBottomBar";
