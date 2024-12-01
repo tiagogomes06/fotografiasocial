@@ -1,4 +1,4 @@
-import { Download, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 
@@ -8,11 +8,10 @@ interface GalleryHeaderProps {
     className: string;
   };
   studentName: string;
-  onDownloadAll: () => void;
   onGoToStore: () => void;
 }
 
-const GalleryHeader = ({ schoolInfo, studentName, onDownloadAll, onGoToStore }: GalleryHeaderProps) => {
+const GalleryHeader = ({ schoolInfo, studentName, onGoToStore }: GalleryHeaderProps) => {
   return (
     <Card className="bg-white/95 backdrop-blur-sm border shadow-lg rounded-xl overflow-hidden">
       <CardContent className="p-6">
@@ -33,14 +32,6 @@ const GalleryHeader = ({ schoolInfo, studentName, onDownloadAll, onGoToStore }: 
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 sm:ml-auto">
-            <Button 
-              onClick={onDownloadAll} 
-              variant="outline" 
-              className="w-full sm:w-auto hover:bg-gray-100"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Transferir Todas
-            </Button>
             <Button 
               onClick={onGoToStore} 
               className="w-full sm:w-auto bg-primary hover:bg-primary/90"

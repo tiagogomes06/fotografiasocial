@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { downloadSinglePhoto, downloadAllPhotos } from "@/utils/downloadUtils";
 import PhotoCard from "./gallery/PhotoCard";
 import GalleryHeader from "./gallery/GalleryHeader";
 
@@ -69,14 +68,6 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
     fetchSchoolInfo();
   }, []);
 
-  const handleSingleDownload = (photoUrl: string, index: number) => {
-    downloadSinglePhoto(photoUrl, `${studentName}_foto_${index + 1}.jpg`);
-  };
-
-  const handleAllDownload = () => {
-    downloadAllPhotos(uniquePhotos, studentName);
-  };
-
   const goToStore = () => {
     const studentId = localStorage.getItem('studentId');
     if (!studentId) {
@@ -92,7 +83,6 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       <GalleryHeader
         schoolInfo={schoolInfo}
         studentName={studentName}
-        onDownloadAll={handleAllDownload}
         onGoToStore={goToStore}
       />
 
@@ -102,7 +92,6 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
             key={photo}
             photo={photo}
             index={index}
-            onDownload={handleSingleDownload}
           />
         ))}
       </div>
