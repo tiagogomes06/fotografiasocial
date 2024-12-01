@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import PhotoGallery from "@/components/PhotoGallery";
 import AccessCodeForm from "@/components/auth/AccessCodeForm";
 import { verifyAccessCode } from "@/utils/authHelpers";
@@ -7,6 +7,9 @@ import { motion } from "framer-motion";
 
 const PhotoAccess = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const code = searchParams.get("code");
+  
   const state = location.state as { 
     photos?: string[],
     studentName?: string,
@@ -20,7 +23,16 @@ const PhotoAccess = () => {
       const isAuthenticated = localStorage.getItem("isAuthenticated");
       const storedAccessCode = localStorage.getItem("accessCode");
       
-      if (isAuthenticated === "true" && storedAccessCode) {
+      if (code) {
+        try {
+          const result = await verifyAccessCode(code);
+          if (result.success) {
+            return;
+          }
+        } catch (error) {
+          console.error("Error verifying access code:", error);
+        }
+      } else if (isAuthenticated === "true" && storedAccessCode) {
         await verifyAccessCode(storedAccessCode);
       }
     };
@@ -28,7 +40,7 @@ const PhotoAccess = () => {
     if (!state?.authenticated) {
       checkAuthentication();
     }
-  }, [state?.authenticated]);
+  }, [state?.authenticated, code]);
 
   if (state?.photos && state?.studentName && state?.authenticated) {
     return <PhotoGallery photos={state.photos} studentName={state.studentName} />;

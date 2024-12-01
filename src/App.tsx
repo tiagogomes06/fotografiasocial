@@ -6,7 +6,6 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import MBWayConfirmation from "./pages/MBWayConfirmation";
 import PaymentConfirmation from "./pages/PaymentConfirmation";
-import AccessPage from "./pages/AccessPage";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -22,7 +21,6 @@ function App() {
           <Route path="/store" element={<Store />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/access" element={<AccessPage />} />
           <Route
             path="/admin/*"
             element={

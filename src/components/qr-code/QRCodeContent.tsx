@@ -17,7 +17,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
   const [randomPhoto, setRandomPhoto] = useState<string>();
   // Use window.location.origin to get the current domain
   const baseUrl = window.location.origin;
-  const qrValue = `${baseUrl}/access?code=${accessCode}`;
+  const qrValue = `${baseUrl}/?code=${accessCode}`;
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
