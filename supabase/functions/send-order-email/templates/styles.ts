@@ -62,14 +62,17 @@ export const emailStyles = `
     color: #333333;
     font-size: 16px;
   }
-  .photo-link {
-    display: inline-block;
-    padding: 8px 16px;
-    background-color: #007bff;
-    color: white !important;
-    text-decoration: none;
+  .payment-details {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+  }
+  .payment-warning {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #fff3cd;
     border-radius: 4px;
-    margin-top: 10px;
+    text-align: center;
+    color: #856404;
   }
   .footer {
     margin-top: 30px;
@@ -87,17 +90,5 @@ export const emailStyles = `
     margin: 20px 0;
     text-align: center;
     font-weight: 500;
-  }
-  .payment-details {
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-  }
-  .payment-warning {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #fff3cd;
-    border-radius: 4px;
-    text-align: center;
-    color: #856404;
   }
 `;
