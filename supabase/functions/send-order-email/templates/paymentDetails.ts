@@ -12,7 +12,10 @@ export const createPaymentSection = (order: any, paymentDetails?: any) => {
 
   return `
     <div class="section payment-details">
-      <h2>Dados para Pagamento Multibanco</h2>
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        Dados para Pagamento Multibanco
+      </h2>
       <div class="info-row">
         <span>Entidade: </span>
         <strong>${paymentDetails.entity}</strong>
@@ -30,7 +33,8 @@ export const createPaymentSection = (order: any, paymentDetails?: any) => {
         <strong>${formattedExpiryDate}</strong>
       </div>
       <div class="payment-warning">
-        <p>⚠️ Por favor efetue o pagamento até à data limite indicada. Após este período, a referência será cancelada.</p>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        Por favor efetue o pagamento até à data limite indicada. Após este período, a referência será cancelada.
       </div>
     </div>
   `;
