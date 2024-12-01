@@ -131,7 +131,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                     <img
                       src={photo}
                       alt={`Foto ${index + 1}`}
-                      className="max-w-full max-h-full object-contain"
+                      className="max-h-[85vh] w-auto max-w-[90vw] object-contain"
                     />
                     <Button
                       onClick={() => {
