@@ -1,16 +1,10 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import PhotoGallery from "@/components/PhotoGallery";
+import AccessCodeForm from "@/components/auth/AccessCodeForm";
 import { motion } from "framer-motion";
 
 const PhotoAccess = () => {
-  const [accessCode, setAccessCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as { 
     photos?: string[],
@@ -25,69 +19,15 @@ const PhotoAccess = () => {
       const isAuthenticated = localStorage.getItem("isAuthenticated");
       const storedAccessCode = localStorage.getItem("accessCode");
       
-      if (isAuthenticated === "true" && storedAccessCode && !state?.authenticated) {
-        await handleAccessCodeVerification(storedAccessCode);
+      if (isAuthenticated === "true" && storedAccessCode) {
+        await verifyAccessCode(storedAccessCode);
       }
     };
 
-    checkAuthentication();
-  }, []);
-
-  const handleAccessCodeVerification = async (code: string) => {
-    setIsLoading(true);
-    try {
-      const { data: student, error } = await supabase
-        .from("students")
-        .select(`
-          id,
-          name,
-          photos (
-            url
-          )
-        `)
-        .eq("access_code", code)
-        .single();
-
-      if (error || !student) {
-        toast.error("Código de acesso inválido");
-        localStorage.removeItem("isAuthenticated");
-        return;
-      }
-
-      localStorage.setItem("studentId", student.id);
-      localStorage.setItem("accessCode", code);
-      localStorage.setItem("isAuthenticated", "true");
-
-      const photoUrls = student.photos.map((photo: { url: string }) => {
-        if (photo.url.includes('supabase')) {
-          const filename = photo.url.split('/').pop();
-          return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
-        }
-        return photo.url;
-      });
-
-      navigate("/", { 
-        state: { 
-          photos: photoUrls,
-          studentName: student.name,
-          studentId: student.id,
-          authenticated: true
-        },
-        replace: true
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Ocorreu um erro ao verificar o código");
-      localStorage.removeItem("isAuthenticated");
-    } finally {
-      setIsLoading(false);
+    if (!state?.authenticated) {
+      checkAuthentication();
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await handleAccessCodeVerification(accessCode);
-  };
+  }, [state?.authenticated]);
 
   if (state?.photos && state?.studentName && state?.authenticated) {
     return <PhotoGallery photos={state.photos} studentName={state.studentName} />;
@@ -117,37 +57,7 @@ const PhotoAccess = () => {
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="w-full max-w-sm"
-        >
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="access-code" className="text-sm font-medium text-gray-700">
-                  Código de Acesso
-                </label>
-                <Input
-                  id="access-code"
-                  type="text"
-                  placeholder="Insira o código de acesso"
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  className="text-center"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 transition-colors"
-                disabled={isLoading}
-              >
-                {isLoading ? "A verificar..." : "Aceder às minhas fotos"}
-              </Button>
-            </form>
-          </div>
-        </motion.div>
+        <AccessCodeForm />
 
         <footer className="mt-12 text-center text-sm text-gray-500">
           <p>Duplo Efeito Fotografia © {new Date().getFullYear()}</p>

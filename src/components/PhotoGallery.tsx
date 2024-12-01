@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import PhotoCard from "./gallery/PhotoCard";
 import GalleryHeader from "./gallery/GalleryHeader";
+import { useSchoolInfo } from "@/hooks/useSchoolInfo";
 
 interface PhotoGalleryProps {
   photos: string[];
@@ -12,14 +12,12 @@ interface PhotoGalleryProps {
 
 const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const navigate = useNavigate();
-  const [schoolInfo, setSchoolInfo] = useState({ schoolName: "", className: "" });
+  const schoolInfo = useSchoolInfo();
 
   // Ensure all photos are using S3 URLs
   const processedPhotos = photos.map(photo => {
     if (photo.includes('supabase')) {
-      // Extract filename from Supabase URL
       const filename = photo.split('/').pop();
-      // Construct S3 URL
       return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
     }
     return photo;
@@ -27,57 +25,6 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
 
   // Remove duplicates from photos array
   const uniquePhotos = [...new Set(processedPhotos)];
-
-  useEffect(() => {
-    const fetchSchoolInfo = async () => {
-      try {
-        const studentId = localStorage.getItem('studentId');
-        if (!studentId) return;
-
-        // First, get the class_id
-        const { data: studentData, error: studentError } = await supabase
-          .from('students')
-          .select('class_id')
-          .eq('id', studentId)
-          .single();
-
-        if (studentError) {
-          console.error('Error fetching student:', studentError);
-          return;
-        }
-
-        if (!studentData?.class_id) return;
-
-        // Then, get the class and school info
-        const { data: classData, error: classError } = await supabase
-          .from('classes')
-          .select(`
-            name,
-            schools!inner (
-              name
-            )
-          `)
-          .eq('id', studentData.class_id)
-          .single();
-
-        if (classError) {
-          console.error('Error fetching class:', classError);
-          return;
-        }
-
-        if (classData) {
-          setSchoolInfo({
-            schoolName: classData.schools.name,
-            className: classData.name
-          });
-        }
-      } catch (error) {
-        console.error('Error in fetchSchoolInfo:', error);
-      }
-    };
-
-    fetchSchoolInfo();
-  }, []);
 
   const goToStore = () => {
     const studentId = localStorage.getItem('studentId');
