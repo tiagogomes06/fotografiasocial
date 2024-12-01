@@ -7,33 +7,33 @@ export const createShippingSection = (order: any) => {
     <div class="section">
       <h2>Detalhes de Envio</h2>
       <div class="info-row">
-        <span>Método:</span>
+        <span>Método: </span>
         <strong>${shippingMethod.name}</strong>
       </div>
       <div class="info-row">
-        <span>Nome:</span>
+        <span>Nome: </span>
         <strong>${order.shipping_name || ''}</strong>
       </div>
       ${order.shipping_address ? `
         <div class="info-row">
-          <span>Morada:</span>
+          <span>Morada: </span>
           <strong>${order.shipping_address}</strong>
         </div>
       ` : ''}
       ${order.shipping_postal_code ? `
         <div class="info-row">
-          <span>Código Postal:</span>
+          <span>Código Postal: </span>
           <strong>${order.shipping_postal_code}</strong>
         </div>
       ` : ''}
       ${order.shipping_city ? `
         <div class="info-row">
-          <span>Cidade:</span>
+          <span>Cidade: </span>
           <strong>${order.shipping_city}</strong>
         </div>
       ` : ''}
       <div class="info-row">
-        <span>Telefone:</span>
+        <span>Telefone: </span>
         <strong>${order.shipping_phone || ''}</strong>
       </div>
     </div>

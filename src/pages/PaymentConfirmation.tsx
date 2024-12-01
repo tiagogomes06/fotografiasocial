@@ -19,6 +19,7 @@ const PaymentConfirmation = () => {
   }
 
   const { entity, reference, amount } = paymentDetails;
+  const formattedReference = reference ? reference.match(/.{1,3}/g).join(' ') : '';
 
   return (
     <div className="min-h-screen bg-gradient-soft py-6 sm:py-12">
@@ -49,7 +50,7 @@ const PaymentConfirmation = () => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-500">Referência</p>
-                  <p className="text-xl font-semibold text-gray-900">{reference}</p>
+                  <p className="text-xl font-semibold text-gray-900">{formattedReference}</p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-500">Montante</p>

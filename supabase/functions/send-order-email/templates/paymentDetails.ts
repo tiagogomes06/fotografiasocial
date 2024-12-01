@@ -5,23 +5,28 @@ export const createPaymentSection = (order: any, paymentDetails?: any) => {
   expiryDate.setDate(expiryDate.getDate() + 1);
   const formattedExpiryDate = expiryDate.toLocaleDateString('pt-PT');
 
+  // Format reference number in groups of 3
+  const formattedReference = paymentDetails.reference
+    ? paymentDetails.reference.match(/.{1,3}/g).join(' ')
+    : '';
+
   return `
     <div class="section payment-details">
       <h2>Dados para Pagamento Multibanco</h2>
       <div class="info-row">
-        <span>Entidade:</span>
+        <span>Entidade: </span>
         <strong>${paymentDetails.entity}</strong>
       </div>
       <div class="info-row">
-        <span>Referência:</span>
-        <strong>${paymentDetails.reference}</strong>
+        <span>Referência: </span>
+        <strong>${formattedReference}</strong>
       </div>
       <div class="info-row">
-        <span>Montante:</span>
+        <span>Montante: </span>
         <strong>${Number(paymentDetails.amount).toFixed(2)}€</strong>
       </div>
       <div class="info-row">
-        <span>Data Limite:</span>
+        <span>Data Limite: </span>
         <strong>${formattedExpiryDate}</strong>
       </div>
       <div class="payment-warning">
