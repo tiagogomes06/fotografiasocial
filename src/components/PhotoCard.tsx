@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Dialog, DialogTrigger } from "../ui/dialog";
-import { Card, CardContent } from "../ui/card";
-import PhotoModal from "./PhotoModal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import PhotoModal from "@/components/PhotoModal";
 
 interface PhotoCardProps {
   photo: string;
