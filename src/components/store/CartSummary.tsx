@@ -1,16 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { CartItem, Product } from "@/types/admin";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 
 interface CartSummaryProps {
   cart: CartItem[];
   products: Product[];
   onCheckout: () => void;
+  onUpdateQuantity?: (index: number, newQuantity: number) => void;
 }
 
-const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
-  const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+const CartSummary = ({ cart, products, onCheckout, onUpdateQuantity }: CartSummaryProps) => {
+  const totalAmount = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
 
   const handleCheckout = async () => {
     try {
@@ -18,6 +19,17 @@ const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
     } catch (error) {
       console.error("Erro ao processar checkout:", error);
       toast.error("Erro ao processar checkout");
+    }
+  };
+
+  const handleQuantityChange = (index: number, change: number) => {
+    if (!onUpdateQuantity) return;
+    
+    const currentQuantity = cart[index].quantity || 1;
+    const newQuantity = currentQuantity + change;
+    
+    if (newQuantity >= 1) {
+      onUpdateQuantity(index, newQuantity);
     }
   };
 
@@ -38,6 +50,7 @@ const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
       <div className="space-y-4">
         {cart.map((item, index) => {
           const product = products.find(p => p.id === item.productId);
+          const quantity = item.quantity || 1;
           return (
             <div 
               key={index} 
@@ -53,8 +66,32 @@ const CartSummary = ({ cart, products, onCheckout }: CartSummaryProps) => {
                 </div>
                 <div>
                   <p className="font-medium">{product?.name}</p>
-                  <p className="text-sm text-gray-500">{item.price}€</p>
+                  <p className="text-sm text-gray-500">{item.price}€ x {quantity}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleQuantityChange(index, -1)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center">{quantity}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleQuantityChange(index, 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
+              </div>
+              <div className="text-right">
+                <p className="font-medium">{(item.price * quantity).toFixed(2)}€</p>
               </div>
             </div>
           );

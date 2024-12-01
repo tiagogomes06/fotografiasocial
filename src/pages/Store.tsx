@@ -16,6 +16,7 @@ const Store = () => {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [productSelections, setProductSelections] = useState<Record<string, string>>({});
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const studentId = localStorage.getItem('studentId');
@@ -58,6 +59,13 @@ const Store = () => {
     setProductSelections(prev => ({
       ...prev,
       [photoUrl]: productId
+    }));
+  };
+
+  const handleQuantityChange = (photoUrl: string, quantity: number) => {
+    setProductQuantities(prev => ({
+      ...prev,
+      [photoUrl]: quantity
     }));
   };
 
@@ -116,6 +124,7 @@ const Store = () => {
     for (const photo of selectedPhotos.filter(photo => productSelections[photo])) {
       const product = products.find(p => p.id === productSelections[photo]);
       const photoId = await getOrCreatePhoto(photo, studentId);
+      const quantity = productQuantities[photo] || 1;
       
       if (!photoId) {
         toast.error(`Erro ao processar foto: ${photo}`);
@@ -127,7 +136,8 @@ const Store = () => {
         photoId: photoId,
         productId: productSelections[photo],
         studentId: studentId,
-        price: product?.price || 0
+        price: product?.price || 0,
+        quantity: quantity
       });
     }
 
@@ -136,6 +146,7 @@ const Store = () => {
       setCart(newCart);
       setSelectedPhotos([]);
       setProductSelections({});
+      setProductQuantities({});
       toast.success("Itens adicionados ao carrinho");
     }
   };
@@ -168,6 +179,7 @@ const Store = () => {
               selectedProduct={productSelections[photo]}
               onProductSelect={(productId) => handleProductSelect(photo, productId)}
               products={products}
+              onQuantityChange={(quantity) => handleQuantityChange(photo, quantity)}
             />
           ))}
         </div>

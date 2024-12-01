@@ -37,4 +37,5 @@ export interface CartItem {
   price: number;
   studentId: string;
   photoId: string;
+  quantity?: number;
 }

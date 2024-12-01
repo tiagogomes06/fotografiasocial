@@ -5,11 +5,13 @@ import { ArrowLeft } from "lucide-react";
 import CartSummary from "@/components/store/CartSummary";
 import CheckoutForm from "@/components/store/CheckoutForm";
 import { toast } from "sonner";
+import { CartItem } from "@/types/admin";
 
 const Cart = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { cart = [], products = [] } = location.state || {};
+  const { cart: initialCart = [], products = [] } = location.state || {};
+  const [cart, setCart] = useState<CartItem[]>(initialCart);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   useEffect(() => {
@@ -22,6 +24,15 @@ const Cart = () => {
 
   const handleBackToStore = () => {
     navigate(-1);
+  };
+
+  const handleUpdateQuantity = (index: number, newQuantity: number) => {
+    const updatedCart = [...cart];
+    updatedCart[index] = {
+      ...updatedCart[index],
+      quantity: newQuantity
+    };
+    setCart(updatedCart);
   };
 
   const startCheckout = () => {
@@ -61,6 +72,7 @@ const Cart = () => {
             cart={cart}
             products={products}
             onCheckout={startCheckout}
+            onUpdateQuantity={handleUpdateQuantity}
           />
         )}
       </div>
