@@ -40,12 +40,13 @@ const AccessPage = () => {
         localStorage.setItem("accessCode", code);
         localStorage.setItem("isAuthenticated", "true");
         
-        // Get photo URLs
+        // Convert Supabase URLs to S3 URLs
         const photoUrls = student.photos.map((photo: { url: string }) => {
-          const { data: { publicUrl } } = supabase.storage
-            .from('photos')
-            .getPublicUrl(photo.url.split('/').pop() || '');
-          return publicUrl;
+          if (photo.url.includes('supabase')) {
+            const filename = photo.url.split('/').pop();
+            return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+          }
+          return photo.url;
         });
 
         // Redirect to photo gallery with authentication state
