@@ -14,8 +14,19 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const navigate = useNavigate();
   const [schoolInfo, setSchoolInfo] = useState({ schoolName: "", className: "" });
 
+  // Ensure all photos are using S3 URLs
+  const processedPhotos = photos.map(photo => {
+    if (photo.includes('supabase')) {
+      // Extract filename from Supabase URL
+      const filename = photo.split('/').pop();
+      // Construct S3 URL
+      return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+    }
+    return photo;
+  });
+
   // Remove duplicates from photos array
-  const uniquePhotos = [...new Set(photos)];
+  const uniquePhotos = [...new Set(processedPhotos)];
 
   useEffect(() => {
     const fetchSchoolInfo = async () => {

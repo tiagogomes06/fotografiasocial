@@ -68,14 +68,14 @@ export const uploadPhoto = async (file: File, studentId: string) => {
       throw new Error('URL da foto não retornada pelo servidor');
     }
 
-    const publicUrl = response.data.url;
-    console.log('URL pública gerada:', publicUrl);
+    const s3Url = response.data.url;
+    console.log('URL S3 gerada:', s3Url);
 
     // Criar registro na tabela photos
     const { data: photoRecord, error: dbError } = await supabase
       .from('photos')
       .insert({
-        url: publicUrl,
+        url: s3Url,
         student_id: studentId
       })
       .select()
@@ -124,7 +124,13 @@ export const fetchSchools = async (): Promise<School[]> => {
     if (!studentPhotos.has(photo.student_id)) {
       studentPhotos.set(photo.student_id, []);
     }
-    studentPhotos.get(photo.student_id).push(photo.url);
+    // Convert Supabase URL to S3 URL if needed
+    let photoUrl = photo.url;
+    if (photoUrl.includes('supabase')) {
+      const filename = photoUrl.split('/').pop();
+      photoUrl = `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+    }
+    studentPhotos.get(photo.student_id).push(photoUrl);
   });
 
   // Transform the data to match our types
