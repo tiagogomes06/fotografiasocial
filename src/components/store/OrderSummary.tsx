@@ -15,6 +15,7 @@ interface OrderSummaryProps {
       price: number;
     }>;
     shippingCost?: number;
+    taxNumber?: string;
   };
   className?: string;
 }
@@ -48,6 +49,12 @@ export const OrderSummary = ({ orderDetails, className }: OrderSummaryProps) => 
                 <span className="text-gray-500">Telefone:</span>
                 <span className="font-medium text-gray-900">{orderDetails.phone}</span>
               </p>
+              {orderDetails.taxNumber && (
+                <p className="flex flex-col md:flex-row md:items-center gap-1">
+                  <span className="text-gray-500">NIF:</span>
+                  <span className="font-medium text-gray-900">{orderDetails.taxNumber}</span>
+                </p>
+              )}
             </div>
           </div>
           

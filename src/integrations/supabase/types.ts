@@ -106,7 +106,9 @@ export type Database = {
           shipping_postal_code: string | null
           status: string
           student_id: string
+          tax_number: string | null
           total_amount: number
+          wants_invoice: boolean | null
         }
         Insert: {
           created_at?: string
@@ -123,7 +125,9 @@ export type Database = {
           shipping_postal_code?: string | null
           status?: string
           student_id: string
+          tax_number?: string | null
           total_amount: number
+          wants_invoice?: boolean | null
         }
         Update: {
           created_at?: string
@@ -140,7 +144,9 @@ export type Database = {
           shipping_postal_code?: string | null
           status?: string
           student_id?: string
+          tax_number?: string | null
           total_amount?: number
+          wants_invoice?: boolean | null
         }
         Relationships: [
           {

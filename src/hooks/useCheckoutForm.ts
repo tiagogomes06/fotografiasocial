@@ -9,28 +9,33 @@ import {
   createOrderItems, 
   processPayment 
 } from "@/utils/orderUtils";
-import { useCheckoutQueries } from "./useCheckoutQueries";
+
+interface FormData {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  wantsInvoice: boolean;
+  taxNumber: string;
+}
 
 export const useCheckoutForm = (cart: CartItem[]) => {
   const navigate = useNavigate();
-  const { shippingMethods, products } = useCheckoutQueries();
   const [shippingMethod, setShippingMethod] = useState("");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
     email: "",
     address: "",
     postalCode: "",
     city: "",
+    wantsInvoice: false,
+    taxNumber: "",
   });
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const selectedShippingMethod = shippingMethods.find(
-    method => method.id === shippingMethod
-  );
-
-  const isPickupMethod = selectedShippingMethod?.type === "pickup";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +49,19 @@ export const useCheckoutForm = (cart: CartItem[]) => {
       toast.error("Por favor preencha o email");
       return;
     }
+
+    if (formData.wantsInvoice && !formData.taxNumber) {
+      toast.error("Por favor preencha o NIF para emissão da fatura");
+      return;
+    }
+
+    const selectedShippingMethod = await supabase
+      .from("shipping_methods")
+      .select("type")
+      .eq("id", shippingMethod)
+      .single();
+
+    const isPickupMethod = selectedShippingMethod.data?.type === "pickup";
 
     if (!isPickupMethod && (!formData.address || !formData.postalCode || !formData.city)) {
       toast.error("Por favor preencha todos os campos de envio");
@@ -79,11 +97,11 @@ export const useCheckoutForm = (cart: CartItem[]) => {
       } else {
         toast.success("Pedido criado com sucesso!");
         
-        const shippingCost = selectedShippingMethod?.price || 0;
+        const shippingCost = selectedShippingMethod?.data?.price || 0;
         const subtotal = order.total_amount - shippingCost;
         
         const orderItems = cart.map(item => ({
-          name: products.find(p => p.id === item.productId)?.name || "Fotografia",
+          name: "Fotografia",
           quantity: item.quantity || 1,
           price: item.price
         }));
@@ -93,10 +111,11 @@ export const useCheckoutForm = (cart: CartItem[]) => {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          shippingMethod: selectedShippingMethod?.name,
+          shippingMethod: selectedShippingMethod?.data?.name,
           total: order.total_amount,
           items: orderItems,
-          shippingCost
+          shippingCost,
+          taxNumber: formData.wantsInvoice ? formData.taxNumber : null
         };
         
         if (paymentMethod === "mbway") {
@@ -105,18 +124,6 @@ export const useCheckoutForm = (cart: CartItem[]) => {
               duration: 10000
             });
           } else {
-            try {
-              await supabase.functions.invoke("send-order-email", {
-                body: {
-                  orderId: order.id,
-                  type: "created"
-                }
-              });
-            } catch (error) {
-              console.error('Error sending order confirmation email:', error);
-              toast.error('Erro ao enviar email de confirmação');
-            }
-
             navigate("/mbway-confirmation", {
               state: { orderDetails }
             });
@@ -160,7 +167,6 @@ export const useCheckoutForm = (cart: CartItem[]) => {
     paymentMethod,
     setPaymentMethod,
     isProcessing,
-    handleSubmit,
-    isPickupMethod
+    handleSubmit
   };
 };

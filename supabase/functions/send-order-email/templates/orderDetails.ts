@@ -13,6 +13,12 @@ export const createOrderDetailsSection = (order: any) => {
         <span>Data:</span>
         <strong>${orderDate}</strong>
       </div>
+      ${order.tax_number ? `
+      <div class="info-row">
+        <span>NIF:</span>
+        <strong>${order.tax_number}</strong>
+      </div>
+      ` : ''}
       <div class="info-row">
         <span>Total:</span>
         <strong>${totalAmount}€</strong>
