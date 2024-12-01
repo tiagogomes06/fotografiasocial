@@ -23,27 +23,49 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
 
   useEffect(() => {
     const fetchSchoolInfo = async () => {
-      const studentId = localStorage.getItem('studentId');
-      if (!studentId) return;
+      try {
+        const studentId = localStorage.getItem('studentId');
+        if (!studentId) return;
 
-      const { data, error } = await supabase
-        .from('students')
-        .select(`
-          class:classes (
+        // First, get the class_id
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .select('class_id')
+          .eq('id', studentId)
+          .single();
+
+        if (studentError) {
+          console.error('Error fetching student:', studentError);
+          return;
+        }
+
+        if (!studentData?.class_id) return;
+
+        // Then, get the class and school info
+        const { data: classData, error: classError } = await supabase
+          .from('classes')
+          .select(`
             name,
-            school:schools (
+            schools!inner (
               name
             )
-          )
-        `)
-        .eq('id', studentId)
-        .single();
+          `)
+          .eq('id', studentData.class_id)
+          .single();
 
-      if (data) {
-        setSchoolInfo({
-          schoolName: data.class.school.name,
-          className: data.class.name
-        });
+        if (classError) {
+          console.error('Error fetching class:', classError);
+          return;
+        }
+
+        if (classData) {
+          setSchoolInfo({
+            schoolName: classData.schools.name,
+            className: classData.name
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchSchoolInfo:', error);
       }
     };
 
