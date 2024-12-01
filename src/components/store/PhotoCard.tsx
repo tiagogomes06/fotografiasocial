@@ -86,7 +86,7 @@ const PhotoCard = ({
         <div className="p-3 animate-in slide-in-from-top-2">
           <ProductSelect
             selectedProducts={selectedProducts}
-            onProductSelect={handleProductSelect}
+            onProductSelect={onProductSelect}
             products={products}
           />
         </div>
