@@ -31,7 +31,7 @@ serve(async (req) => {
     const { orderId, type, paymentDetails } = await req.json();
     console.log(`[send-order-email] Processing ${type} email for order: ${orderId}`);
 
-    // Create SMTP client
+    // Create SMTP client with proper configuration
     const client = new SMTPClient({
       connection: {
         hostname: "mail.duploefeito.com",
@@ -84,11 +84,11 @@ serve(async (req) => {
       throw new Error('No email address associated with order');
     }
 
-    // Generate email content
-    console.log('[send-order-email] Generating email template...');
-    const emailHtml = createEmailTemplate(order, type, false, paymentDetails);
+    // Generate customer email content (without photo links)
+    console.log('[send-order-email] Generating customer email template...');
+    const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
 
-    // Send email to customer
+    // Send email to customer with proper headers
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
       from: "Fotografia Escolar <encomendas@duploefeito.com>",
@@ -96,10 +96,13 @@ serve(async (req) => {
       subject: type === 'created' ? 
         `Confirmação de Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      html: emailHtml,
+      html: customerEmailHtml,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
     });
 
-    // If payment is completed, also send notification to admin emails
+    // If payment is completed, also send notification to admin emails with photo links
     if (type === 'paid') {
       console.log('[send-order-email] Sending admin notification emails...');
       
@@ -110,6 +113,9 @@ serve(async (req) => {
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
         html: adminEmailHtml,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
       });
       
       console.log('[send-order-email] Admin notifications sent');
