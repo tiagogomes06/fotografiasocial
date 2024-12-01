@@ -62,13 +62,15 @@ serve(async (req) => {
       Key: fileName,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
+      ACL: 'public-read', // Define o arquivo como público durante o upload
     };
 
     console.log('Uploading to S3:', {
       bucket: uploadParams.Bucket,
       key: uploadParams.Key,
       contentType: uploadParams.ContentType,
-      size: arrayBuffer.byteLength
+      size: arrayBuffer.byteLength,
+      acl: uploadParams.ACL
     });
 
     const uploadResult = await s3Client.send(new PutObjectCommand(uploadParams));
