@@ -57,7 +57,7 @@ export const useCheckoutForm = (cart: CartItem[]) => {
 
     const selectedShippingMethod = await supabase
       .from("shipping_methods")
-      .select("type")
+      .select("*")  // Changed from "type" to "*" to get all fields
       .eq("id", shippingMethod)
       .single();
 
