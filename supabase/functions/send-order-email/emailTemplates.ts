@@ -89,7 +89,7 @@ export const createEmailTemplate = (
           <p style="margin: 0.25rem 0; font-weight: 600; color: #374151;">${item.products.name}</p>
           <p style="margin: 0.25rem 0; color: #4b5563;">Quantidade: ${item.quantity}</p>
           <p style="margin: 0.25rem 0; color: #4b5563;">Preço: ${Number(item.price_at_time).toFixed(2)}€</p>
-          <a href="${item.photos.url}" style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 0.5rem; font-weight: 500;">Ver Foto</a>
+          ${isAdmin ? `<a href="${item.photos.url}" style="color: #4f46e5; text-decoration: none; display: inline-block; margin-top: 0.5rem; font-weight: 500;">Ver Foto</a>` : ''}
         </div>
       `).join('')}
     </div>
