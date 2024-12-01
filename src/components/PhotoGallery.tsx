@@ -14,30 +14,36 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
   const navigate = useNavigate();
   const schoolInfo = useSchoolInfo();
 
-  // Ensure all photos are using S3 URLs
-  const processedPhotos = photos.map(photo => {
-    // Check if it's already an S3 URL
-    if (photo.includes('amazonaws.com')) {
-      return photo;
-    }
-    
-    // If it's a Supabase URL, convert to S3
-    if (photo.includes('supabase')) {
-      const filename = photo.split('/').pop();
-      if (!filename) {
-        console.error('Invalid photo URL:', photo);
+  // Ensure all photos are using S3 URLs and are valid
+  const processedPhotos = photos
+    .filter(Boolean) // Remove any null/undefined values
+    .map(photo => {
+      try {
+        // If it's already an S3 URL, return it
+        if (photo.includes('amazonaws.com')) {
+          return photo;
+        }
+        
+        // If it's a Supabase URL or just a filename, extract the filename
+        const filename = photo.includes('supabase') 
+          ? photo.split('/').pop()
+          : photo.includes('/') 
+            ? photo.split('/').pop() 
+            : photo;
+
+        if (!filename) {
+          console.error('Invalid photo URL:', photo);
+          return null;
+        }
+
+        // Construct S3 URL
+        return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+      } catch (error) {
+        console.error('Error processing photo URL:', photo, error);
         return null;
       }
-      return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
-    }
-    
-    // If it's just a filename, construct S3 URL
-    if (!photo.includes('http')) {
-      return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${photo}`;
-    }
-    
-    return photo;
-  }).filter(Boolean) as string[]; // Remove any null values
+    })
+    .filter(Boolean) as string[]; // Remove any null values after processing
 
   // Remove duplicates from photos array
   const uniquePhotos = [...new Set(processedPhotos)];
@@ -49,6 +55,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
       navigate('/');
       return;
     }
+
     // Pass the processed photos to maintain consistency
     navigate('/store', { 
       state: { 
@@ -56,7 +63,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
         studentName, 
         studentId 
       },
-      replace: true // Add replace: true to prevent navigation loop
+      replace: true
     });
   };
 

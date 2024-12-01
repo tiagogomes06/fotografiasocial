@@ -24,8 +24,9 @@ const Store = () => {
   } = useStore();
 
   useEffect(() => {
-    // Check if we have the required state
-    if (!photos.length || !location.state) {
+    // Validate required state and localStorage data
+    if (!photos?.length || !location.state) {
+      console.error('Missing required state:', { photos, locationState: location.state });
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
       navigate('/', { replace: true });
       return;
@@ -33,11 +34,21 @@ const Store = () => {
 
     const studentId = localStorage.getItem('studentId');
     if (!studentId) {
+      console.error('Missing studentId in localStorage');
       toast.error("Por favor, volte à página inicial e acesse suas fotos novamente");
       navigate('/', { replace: true });
       return;
     }
-  }, [navigate, location.state, photos.length]);
+
+    // Validate photo URLs
+    const invalidPhotos = photos.filter(photo => !photo || typeof photo !== 'string');
+    if (invalidPhotos.length > 0) {
+      console.error('Invalid photo URLs detected:', invalidPhotos);
+      toast.error("Algumas fotos estão inválidas. Por favor, tente novamente.");
+      navigate('/', { replace: true });
+      return;
+    }
+  }, [navigate, location.state, photos]);
 
   const handleCartNavigation = () => {
     navigate('/cart', { 
@@ -48,7 +59,7 @@ const Store = () => {
     });
   };
 
-  // Calculate total selected products by summing up quantities
+  // Calculate total selected products
   const totalSelectedProducts = selectedPhotos.reduce((total, photoUrl) => {
     const photoSelections = productSelections[photoUrl] || {};
     const photoTotal = Object.values(photoSelections).reduce((sum, quantity) => sum + quantity, 0);
