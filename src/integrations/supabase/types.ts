@@ -185,18 +185,21 @@ export type Database = {
       }
       photos: {
         Row: {
+          compressed_url: string | null
           created_at: string
           id: string
           student_id: string
           url: string
         }
         Insert: {
+          compressed_url?: string | null
           created_at?: string
           id?: string
           student_id: string
           url: string
         }
         Update: {
+          compressed_url?: string | null
           created_at?: string
           id?: string
           student_id?: string

@@ -29,19 +29,20 @@ export const uploadPhoto = async (file: File, studentId: string) => {
       throw new Error(`Erro no upload: ${response.error.message}`);
     }
 
-    if (!response.data?.url) {
+    if (!response.data?.url || !response.data?.compressedUrl) {
       console.error('Resposta inválida da Edge Function:', response.data);
-      throw new Error('URL da foto não retornada pelo servidor');
+      throw new Error('URLs das fotos não retornadas pelo servidor');
     }
 
-    const s3Url = response.data.url;
-    console.log('URL S3 gerada:', s3Url);
+    const { url: originalUrl, compressedUrl } = response.data;
+    console.log('URLs geradas:', { originalUrl, compressedUrl });
 
     // Criar registro na tabela photos
     const { data: photoRecord, error: dbError } = await supabase
       .from('photos')
       .insert({
-        url: s3Url,
+        url: originalUrl,
+        compressed_url: compressedUrl,
         student_id: studentId
       })
       .select()

@@ -13,9 +13,18 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Get the compressed URL by adding _compressed before the extension
+  const getCompressedUrl = (url: string) => {
+    const lastDotIndex = url.lastIndexOf('.');
+    if (lastDotIndex === -1) return url;
+    return `${url.substring(0, lastDotIndex)}_compressed${url.substring(lastDotIndex)}`;
+  };
+
+  const compressedUrl = getCompressedUrl(photo);
+
   const handleImageError = () => {
     console.error("Falha ao carregar imagem:", {
-      url: photo,
+      url: compressedUrl,
       error: "Imagem não carregou",
       timestamp: new Date().toISOString(),
       userAgent: window.navigator.userAgent,
@@ -27,7 +36,7 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
 
   const handleImageLoad = () => {
     console.log("Imagem carregada com sucesso:", {
-      url: photo,
+      url: compressedUrl,
       timestamp: new Date().toISOString(),
       userAgent: window.navigator.userAgent
     });
@@ -60,7 +69,7 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
                 </div>
               )}
               <img
-                src={photo}
+                src={compressedUrl}
                 alt={`Foto ${index + 1}`}
                 className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none ${
                   isLoading ? 'opacity-0' : 'opacity-100'

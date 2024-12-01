@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3"
+import Sharp from "npm:sharp";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,13 +54,18 @@ serve(async (req) => {
       size: file.size
     });
 
-    const fileName = `photos/${crypto.randomUUID()}.${file.name.split('.').pop()}`;
-    console.log('Generated filename:', fileName);
+    const fileId = crypto.randomUUID();
+    const fileExt = file.name.split('.').pop();
+    const originalFileName = `photos/${fileId}.${fileExt}`;
+    const compressedFileName = `photos/${fileId}_compressed.${fileExt}`;
 
+    console.log('Generated filenames:', { originalFileName, compressedFileName });
+
+    // Upload original file
     const arrayBuffer = await file.arrayBuffer();
-    const uploadParams = {
+    const originalUploadParams = {
       Bucket: BUCKET_NAME,
-      Key: fileName,
+      Key: originalFileName,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
       ACL: 'public-read',
@@ -68,25 +74,48 @@ serve(async (req) => {
       },
     };
 
-    console.log('Uploading to S3:', {
-      bucket: uploadParams.Bucket,
-      key: uploadParams.Key,
-      contentType: uploadParams.ContentType,
-      size: arrayBuffer.byteLength,
-      acl: uploadParams.ACL
-    });
+    console.log('Uploading original to S3...');
+    await s3Client.send(new PutObjectCommand(originalUploadParams));
 
-    const uploadResult = await s3Client.send(new PutObjectCommand(uploadParams));
-    console.log('S3 upload result:', uploadResult);
+    // Create compressed version
+    const compressedBuffer = await Sharp(arrayBuffer)
+      .resize(800, 800, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      .jpeg({
+        quality: 80,
+        progressive: true
+      })
+      .toBuffer();
 
-    // Generate a direct public URL
-    const s3Url = `https://${BUCKET_NAME}.s3.${Deno.env.get('AWS_REGION') ?? 'eu-west-1'}.amazonaws.com/${fileName}`;
-    console.log('Generated S3 URL:', s3Url);
+    // Upload compressed file
+    const compressedUploadParams = {
+      Bucket: BUCKET_NAME,
+      Key: compressedFileName,
+      Body: compressedBuffer,
+      ContentType: 'image/jpeg',
+      ACL: 'public-read',
+      Metadata: {
+        'x-amz-acl': 'public-read',
+      },
+    };
+
+    console.log('Uploading compressed version to S3...');
+    await s3Client.send(new PutObjectCommand(compressedUploadParams));
+
+    // Generate URLs
+    const region = Deno.env.get('AWS_REGION') ?? 'eu-west-1';
+    const originalUrl = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${originalFileName}`;
+    const compressedUrl = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${compressedFileName}`;
+
+    console.log('Generated URLs:', { originalUrl, compressedUrl });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: s3Url
+        url: originalUrl,
+        compressedUrl: compressedUrl
       }),
       { 
         headers: { 
