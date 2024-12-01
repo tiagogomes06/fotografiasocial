@@ -91,4 +91,16 @@ export const emailStyles = `
     text-align: center;
     font-weight: 500;
   }
+  .photo-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .photo-link:hover {
+    background-color: #0056b3;
+  }
 `;
