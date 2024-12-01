@@ -37,7 +37,7 @@ const PhotoCard = ({
   const handleImageError = () => {
     if (retryCount < MAX_RETRIES) {
       // Retry loading the image
-      setRetryCount(prev => prev + 1);
+      setRetryCount((prev: number) => prev + 1);
       const img = new Image();
       img.src = photo + '?retry=' + new Date().getTime();
       img.onload = () => {
@@ -45,7 +45,7 @@ const PhotoCard = ({
         setRetryCount(0);
       };
       img.onerror = () => {
-        setRetryCount(prev => prev + 1);
+        setRetryCount((prev: number) => prev + 1);
         if (prev + 1 >= MAX_RETRIES) {
           console.error("Failed to load store image after retries:", photo);
           setImageError(true);
