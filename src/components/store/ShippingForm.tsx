@@ -1,12 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ShippingMethodCard from "./ShippingMethodCard";
 
 interface ShippingFormProps {
   formData: {
@@ -62,32 +56,31 @@ const ShippingForm = ({
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              placeholder="912 345 678"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              required
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="phone">Telefone</Label>
+          <Input
+            id="phone"
+            placeholder="912 345 678"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            required
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label>Método de Envio</Label>
-            <Select value={shippingMethod} onValueChange={setShippingMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o método de envio" />
-              </SelectTrigger>
-              <SelectContent>
-                {shippingMethods.map((method) => (
-                  <SelectItem key={method.id} value={method.id}>
-                    {method.name} {method.price > 0 ? `(${method.price}€)` : "(Grátis)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <Label>Método de Envio</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {shippingMethods.map((method) => (
+              <ShippingMethodCard
+                key={method.id}
+                id={method.id}
+                name={method.name}
+                description={method.description || ""}
+                price={method.price}
+                selected={shippingMethod === method.id}
+                onSelect={() => setShippingMethod(method.id)}
+              />
+            ))}
           </div>
         </div>
 
