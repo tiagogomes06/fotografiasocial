@@ -24,10 +24,17 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       maxSizeMB: 1,
       maxWidthOrHeight: 1920,
       useWebWorker: true,
+      onProgress: (progress: number) => {
+        console.log('Compressão:', Math.round(progress * 100) + '%');
+      }
     };
 
     try {
       const compressedFile = await imageCompression(file, options);
+      console.log('Compressão concluída:', {
+        originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+        compressedSize: (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB'
+      });
       return compressedFile;
     } catch (error) {
       console.error("Erro na compressão:", error);
@@ -47,37 +54,41 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       const totalFiles = fileArray.length;
       let completedFiles = 0;
 
-      // Processar arquivos em paralelo
-      const uploadPromises = fileArray.map(async (file, index) => {
-        if (!file.type.startsWith('image/')) {
-          toast.error(`O ficheiro ${file.name} não é uma imagem`);
-          return null;
-        }
+      // Processar arquivos em paralelo com limite de 3 uploads simultâneos
+      const batchSize = 3;
+      for (let i = 0; i < fileArray.length; i += batchSize) {
+        const batch = fileArray.slice(i, i + batchSize);
+        const uploadPromises = batch.map(async (file) => {
+          if (!file.type.startsWith('image/')) {
+            toast.error(`O arquivo ${file.name} não é uma imagem`);
+            return null;
+          }
 
-        setCurrentFile(file.name);
-        
-        // Comprimir imagem
-        const compressedFile = await compressImage(file);
-        
-        const photo = await uploadPhoto(compressedFile, studentId);
-        completedFiles++;
-        setUploadProgress((completedFiles / totalFiles) * 100);
-        
-        return photo;
-      });
+          setCurrentFile(file.name);
+          
+          // Comprimir imagem
+          const compressedFile = await compressImage(file);
+          
+          const photo = await uploadPhoto(compressedFile, studentId);
+          completedFiles++;
+          setUploadProgress((completedFiles / totalFiles) * 100);
+          
+          return photo;
+        });
 
-      const results = await Promise.all(uploadPromises);
-      
-      // Filtrar uploads bem sucedidos e notificar
-      const successfulUploads = results.filter(result => result !== null);
-      successfulUploads.forEach(photo => {
-        if (photo) {
-          onPhotoUploaded(photo.url);
-        }
-      });
+        const results = await Promise.all(uploadPromises);
+        
+        // Filtrar uploads bem sucedidos e notificar
+        const successfulUploads = results.filter(result => result !== null);
+        successfulUploads.forEach(photo => {
+          if (photo) {
+            onPhotoUploaded(photo.url);
+          }
+        });
+      }
 
-      if (successfulUploads.length > 0) {
-        toast.success(`${successfulUploads.length} fotografias carregadas com sucesso`);
+      if (completedFiles > 0) {
+        toast.success(`${completedFiles} fotografias carregadas com sucesso`);
       }
 
       setIsOpen(false);
