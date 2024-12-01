@@ -16,12 +16,28 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
 
   // Ensure all photos are using S3 URLs
   const processedPhotos = photos.map(photo => {
+    // Check if it's already an S3 URL
+    if (photo.includes('amazonaws.com')) {
+      return photo;
+    }
+    
+    // If it's a Supabase URL, convert to S3
     if (photo.includes('supabase')) {
       const filename = photo.split('/').pop();
+      if (!filename) {
+        console.error('Invalid photo URL:', photo);
+        return null;
+      }
       return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
     }
+    
+    // If it's just a filename, construct S3 URL
+    if (!photo.includes('http')) {
+      return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${photo}`;
+    }
+    
     return photo;
-  });
+  }).filter(Boolean) as string[]; // Remove any null values
 
   // Remove duplicates from photos array
   const uniquePhotos = [...new Set(processedPhotos)];
