@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import QRCodeImage from "./QRCodeImage";
+import QRCodeLogo from "./QRCodeLogo";
+import QRCodeStudentInfo from "./QRCodeStudentInfo";
+import QRCodeStudentPhoto from "./QRCodeStudentPhoto";
 
 interface QRCodeContentProps {
   studentId: string;
@@ -62,35 +65,20 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
       className="flex flex-col items-center justify-center p-6 space-y-4 bg-white"
       style={{ minWidth: '400px' }}
     >
-      <img 
-        src="https://fotografiasocial.duploefeito.com/logo.jpg"
-        alt="Duplo Efeito" 
-        className="w-32 h-auto mb-4"
-        crossOrigin="anonymous"
-        onError={(e) => {
-          const img = e.target as HTMLImageElement;
-          img.style.display = 'none';
-        }}
-      />
+      <QRCodeLogo />
 
       {schoolInfo && (
-        <div className="text-center space-y-1">
-          <p className="font-semibold text-lg">{schoolInfo.schoolName}</p>
-          <p className="text-base">{schoolInfo.className}</p>
-          <p className="text-base font-medium">{studentName}</p>
-        </div>
+        <QRCodeStudentInfo
+          schoolName={schoolInfo.schoolName}
+          className={schoolInfo.className}
+          studentName={studentName}
+        />
       )}
 
       {randomPhoto && (
-        <img 
-          src={randomPhoto} 
-          alt={studentName}
-          className="w-32 h-32 object-cover rounded-lg"
-          crossOrigin="anonymous"
-          onError={(e) => {
-            const img = e.target as HTMLImageElement;
-            img.style.display = 'none';
-          }}
+        <QRCodeStudentPhoto
+          photoUrl={randomPhoto}
+          studentName={studentName}
         />
       )}
 
