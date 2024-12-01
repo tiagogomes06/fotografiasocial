@@ -25,8 +25,6 @@ const PhotoCard = ({
   products,
 }: PhotoCardProps) => {
   const [imageError, setImageError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
 
   const handleClick = () => {
     if (!imageError) {
@@ -35,36 +33,9 @@ const PhotoCard = ({
   };
 
   const handleImageError = () => {
-    const currentRetryCount = retryCount + 1;
-    
-    if (currentRetryCount < MAX_RETRIES) {
-      setRetryCount(currentRetryCount);
-      const img = new Image();
-      img.src = photo + '?retry=' + new Date().getTime();
-      img.onload = () => {
-        setImageError(false);
-        setRetryCount(0);
-      };
-      img.onerror = () => {
-        if (currentRetryCount >= MAX_RETRIES) {
-          console.error("Failed to load store image after retries:", photo);
-          setImageError(true);
-          toast.error("Erro ao carregar uma imagem. Por favor, tente novamente mais tarde.");
-        } else {
-          setRetryCount(currentRetryCount);
-        }
-      };
-    } else {
-      setImageError(true);
-    }
-  };
-
-  const handleProductSelect = (productId: string, quantity: number) => {
-    if (quantity === 0) {
-      onProductDeselect(productId);
-    } else {
-      onProductSelect(productId, quantity);
-    }
+    console.error("Failed to load image:", photo);
+    setImageError(true);
+    toast.error("Não foi possível carregar a imagem. Por favor, atualize a página.");
   };
 
   if (imageError) {
@@ -76,7 +47,6 @@ const PhotoCard = ({
             <button 
               onClick={() => {
                 setImageError(false);
-                setRetryCount(0);
               }}
               className="block mt-2 text-primary hover:underline"
             >
