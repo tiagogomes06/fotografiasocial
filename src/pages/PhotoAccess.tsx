@@ -59,8 +59,11 @@ const PhotoAccess = () => {
       localStorage.setItem("isAuthenticated", "true");
 
       const photoUrls = student.photos.map((photo: { url: string }) => {
-        const filename = photo.url.split('/').pop();
-        return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+        if (photo.url.includes('supabase')) {
+          const filename = photo.url.split('/').pop();
+          return `https://${import.meta.env.VITE_AWS_BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/photos/${filename}`;
+        }
+        return photo.url;
       });
 
       navigate("/", { 
