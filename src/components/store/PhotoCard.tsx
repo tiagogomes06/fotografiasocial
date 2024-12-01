@@ -35,9 +35,10 @@ const PhotoCard = ({
   };
 
   const handleImageError = () => {
-    if (retryCount < MAX_RETRIES) {
-      // Retry loading the image
-      setRetryCount((prev: number) => prev + 1);
+    const currentRetryCount = retryCount + 1;
+    
+    if (currentRetryCount < MAX_RETRIES) {
+      setRetryCount(currentRetryCount);
       const img = new Image();
       img.src = photo + '?retry=' + new Date().getTime();
       img.onload = () => {
@@ -45,11 +46,12 @@ const PhotoCard = ({
         setRetryCount(0);
       };
       img.onerror = () => {
-        setRetryCount((prev: number) => prev + 1);
-        if (prev + 1 >= MAX_RETRIES) {
+        if (currentRetryCount >= MAX_RETRIES) {
           console.error("Failed to load store image after retries:", photo);
           setImageError(true);
           toast.error("Erro ao carregar uma imagem. Por favor, tente novamente mais tarde.");
+        } else {
+          setRetryCount(currentRetryCount);
         }
       };
     } else {
