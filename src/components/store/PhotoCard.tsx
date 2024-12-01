@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import ProductSelect from "./ProductSelect";
 import { Product } from "@/types/admin";
+import { toast } from "sonner";
 
 interface PhotoCardProps {
   photo: string;
@@ -24,6 +25,8 @@ const PhotoCard = ({
   products,
 }: PhotoCardProps) => {
   const [imageError, setImageError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   const handleClick = () => {
     if (!imageError) {
@@ -32,8 +35,26 @@ const PhotoCard = ({
   };
 
   const handleImageError = () => {
-    console.error("Failed to load store image:", photo);
-    setImageError(true);
+    if (retryCount < MAX_RETRIES) {
+      // Retry loading the image
+      setRetryCount(prev => prev + 1);
+      const img = new Image();
+      img.src = photo + '?retry=' + new Date().getTime();
+      img.onload = () => {
+        setImageError(false);
+        setRetryCount(0);
+      };
+      img.onerror = () => {
+        setRetryCount(prev => prev + 1);
+        if (prev + 1 >= MAX_RETRIES) {
+          console.error("Failed to load store image after retries:", photo);
+          setImageError(true);
+          toast.error("Erro ao carregar uma imagem. Por favor, tente novamente mais tarde.");
+        }
+      };
+    } else {
+      setImageError(true);
+    }
   };
 
   const handleProductSelect = (productId: string, quantity: number) => {
@@ -47,8 +68,19 @@ const PhotoCard = ({
   if (imageError) {
     return (
       <Card className="group overflow-hidden relative">
-        <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-500">
-          Imagem não disponível
+        <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-500 p-4 text-center">
+          <p>
+            Não foi possível carregar esta imagem.
+            <button 
+              onClick={() => {
+                setImageError(false);
+                setRetryCount(0);
+              }}
+              className="block mt-2 text-primary hover:underline"
+            >
+              Tentar novamente
+            </button>
+          </p>
         </div>
       </Card>
     );
