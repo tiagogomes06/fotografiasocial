@@ -31,7 +31,6 @@ serve(async (req: Request) => {
     const { orderId, type, paymentDetails } = await req.json();
     console.log(`[send-order-email] Processing ${type} email for order: ${orderId}`);
 
-    // Create SMTP client with proper configuration
     const client = new SMTPClient({
       connection: {
         hostname: "mail.duploefeito.com",
@@ -44,7 +43,6 @@ serve(async (req: Request) => {
       },
     });
 
-    // Fetch order details with all related information
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -84,11 +82,9 @@ serve(async (req: Request) => {
       throw new Error('No email address associated with order');
     }
 
-    // Generate customer email content
     console.log('[send-order-email] Generating customer email template...');
     const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
 
-    // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
       from: "encomendas@duploefeito.com",
@@ -99,7 +95,6 @@ serve(async (req: Request) => {
       html: customerEmailHtml,
     });
 
-    // If payment is completed, also send notification to admin emails with photo links
     if (type === 'paid') {
       console.log('[send-order-email] Sending admin notification emails...');
       
