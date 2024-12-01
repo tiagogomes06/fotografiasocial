@@ -18,18 +18,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-      } catch (error) {
-        console.error('Error getting session:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getInitialSession();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
 
     // Listen for auth changes
     const {

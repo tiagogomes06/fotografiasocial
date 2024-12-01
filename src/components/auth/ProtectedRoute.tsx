@@ -8,7 +8,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      navigate("/admin/login");
+      navigate("/admin/login", { replace: true });
     }
   }, [session, isLoading, navigate]);
 
