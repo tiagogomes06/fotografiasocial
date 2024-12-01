@@ -126,7 +126,7 @@ const PhotoGallery = ({ photos, studentName }: PhotoGalleryProps) => {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="max-w-[95vw] w-auto p-0 bg-transparent border-none">
+                <DialogContent className="max-w-[95vw] w-auto p-0 bg-transparent border-none" hideCloseButton>
                   <div className="relative w-full h-[90vh] flex items-center justify-center bg-black/80">
                     <img
                       src={photo}
