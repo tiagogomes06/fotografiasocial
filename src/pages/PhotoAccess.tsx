@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import PhotoGallery from "@/components/PhotoGallery";
 import AccessCodeForm from "@/components/auth/AccessCodeForm";
 import { verifyAccessCode } from "@/utils/authHelpers";
@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 
 const PhotoAccess = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
   
@@ -27,20 +28,37 @@ const PhotoAccess = () => {
         try {
           const result = await verifyAccessCode(code);
           if (result.success) {
+            // Update the route state with the authentication result
+            navigate("/", { 
+              state: { 
+                photos: result.photos,
+                studentName: result.studentName,
+                studentId: result.studentId,
+                fromQR: true,
+                authenticated: true
+              },
+              replace: true
+            });
             return;
           }
         } catch (error) {
           console.error("Error verifying access code:", error);
         }
       } else if (isAuthenticated === "true" && storedAccessCode) {
-        await verifyAccessCode(storedAccessCode);
+        try {
+          await verifyAccessCode(storedAccessCode);
+        } catch (error) {
+          console.error("Error verifying stored access code:", error);
+          localStorage.removeItem("isAuthenticated");
+          localStorage.removeItem("accessCode");
+        }
       }
     };
 
     if (!state?.authenticated) {
       checkAuthentication();
     }
-  }, [state?.authenticated, code]);
+  }, [state?.authenticated, code, navigate]);
 
   if (state?.photos && state?.studentName && state?.authenticated) {
     return <PhotoGallery photos={state.photos} studentName={state.studentName} />;
