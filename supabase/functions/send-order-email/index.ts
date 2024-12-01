@@ -64,15 +64,14 @@ serve(async (req) => {
     // Create email content
     const emailHtml = createEmailTemplate(order, type, false, paymentDetails);
     
-    // Send customer email with minimal headers
+    // Send customer email with proper content type
     await client.send({
       from: "encomendas@duploefeito.com",
       to: order.email,
       subject: type === 'created' ? 
         `Nova Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      content: emailHtml,
-      html: true
+      html: emailHtml
     });
 
     console.log('Customer email sent successfully');
@@ -84,8 +83,7 @@ serve(async (req) => {
         from: "encomendas@duploefeito.com",
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
-        content: adminEmailHtml,
-        html: true
+        html: adminEmailHtml
       });
       console.log('Admin notification email sent successfully');
     }
