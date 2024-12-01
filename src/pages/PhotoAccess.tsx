@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import PhotoGallery from "@/components/PhotoGallery";
 import AccessCodeForm from "@/components/auth/AccessCodeForm";
+import { verifyAccessCode } from "@/utils/authHelpers";
 import { motion } from "framer-motion";
 
 const PhotoAccess = () => {
