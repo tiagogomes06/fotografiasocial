@@ -48,10 +48,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
         if (data.photos && data.photos.length > 0) {
           const randomIndex = Math.floor(Math.random() * data.photos.length);
           const photoUrl = data.photos[randomIndex].url;
-          const { data: publicUrl } = supabase.storage
-            .from('photos')
-            .getPublicUrl(photoUrl.split('/').pop() || '');
-          setRandomPhoto(publicUrl.publicUrl);
+          setRandomPhoto(photoUrl);
         }
       }
     };

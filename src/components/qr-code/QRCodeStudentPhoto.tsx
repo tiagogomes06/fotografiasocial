@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface QRCodeStudentPhotoProps {
   photoUrl: string;
@@ -6,6 +6,12 @@ interface QRCodeStudentPhotoProps {
 }
 
 const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return null;
+  }
+
   return (
     <div className="w-32 h-32 mx-auto overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
       <img 
@@ -14,8 +20,8 @@ const QRCodeStudentPhoto = ({ photoUrl, studentName }: QRCodeStudentPhotoProps) 
         className="max-w-full max-h-full object-contain"
         crossOrigin="anonymous"
         onError={(e) => {
-          const img = e.target as HTMLImageElement;
-          img.style.display = 'none';
+          console.error("Error loading image:", e);
+          setImageError(true);
         }}
       />
     </div>
