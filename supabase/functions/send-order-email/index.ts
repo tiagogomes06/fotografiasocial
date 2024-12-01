@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -84,11 +84,11 @@ serve(async (req) => {
       throw new Error('No email address associated with order');
     }
 
-    // Generate customer email content (without photo links)
+    // Generate customer email content
     console.log('[send-order-email] Generating customer email template...');
     const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
 
-    // Send email to customer with single Content-Type header
+    // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
       from: {
@@ -97,9 +97,8 @@ serve(async (req) => {
       },
       to: order.email,
       subject: type === 'created' ? 
-        `Confirmação de Encomenda #${orderId}` : 
+        `Nova Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      content: "text/html",
       html: customerEmailHtml,
     });
 
@@ -116,7 +115,6 @@ serve(async (req) => {
         },
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
-        content: "text/html",
         html: adminEmailHtml,
       });
       
