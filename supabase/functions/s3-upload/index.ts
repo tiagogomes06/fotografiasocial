@@ -62,7 +62,6 @@ serve(async (req) => {
       Key: fileName,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
-      ACL: 'public-read',
     };
 
     console.log('Uploading to S3:', {
