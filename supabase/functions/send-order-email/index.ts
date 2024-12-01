@@ -15,6 +15,7 @@ serve(async (req) => {
 
   try {
     const { orderId, type, paymentDetails } = await req.json();
+    console.log('Processing email for order:', orderId, 'type:', type);
 
     const client = new SMTPClient({
       connection: {
@@ -58,22 +59,26 @@ serve(async (req) => {
     if (!order) throw new Error('Order not found');
     if (!order.email) throw new Error('No email address associated with order');
 
-    // Create email content with proper encoding
-    const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
+    console.log('Sending email to:', order.email);
+
+    // Create email content
+    const emailHtml = createEmailTemplate(order, type, false, paymentDetails);
     
-    // Send customer email with content-transfer-encoding set to base64
+    // Send customer email with simplified headers
     await client.send({
       from: "encomendas@duploefeito.com",
       to: order.email,
       subject: type === 'created' ? 
         `Nova Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      html: customerEmailHtml,
+      html: emailHtml,
+      // Remove Content-Transfer-Encoding and let the library handle it
       headers: {
-        "Content-Transfer-Encoding": "quoted-printable",
         "Content-Type": "text/html; charset=UTF-8"
       }
     });
+
+    console.log('Customer email sent successfully');
 
     // Send admin notification for paid orders
     if (type === 'paid') {
@@ -83,11 +88,12 @@ serve(async (req) => {
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
         html: adminEmailHtml,
+        // Remove Content-Transfer-Encoding and let the library handle it
         headers: {
-          "Content-Transfer-Encoding": "quoted-printable",
           "Content-Type": "text/html; charset=UTF-8"
         }
       });
+      console.log('Admin notification email sent successfully');
     }
 
     await client.close();
