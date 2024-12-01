@@ -2,7 +2,7 @@ export const createPaymentSection = (order: any, paymentDetails?: any) => {
   if (order.payment_method !== 'multibanco' || !paymentDetails) return '';
 
   const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + 1); // 24 hours from now
+  expiryDate.setDate(expiryDate.getDate() + 1);
   const formattedExpiryDate = expiryDate.toLocaleDateString('pt-PT');
 
   return `

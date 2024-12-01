@@ -20,6 +20,7 @@ export const createEmailTemplate = (order: any, type: 'created' | 'paid', isAdmi
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${type === 'created' ? 'Nova Encomenda' : 'Pagamento Confirmado'}</title>
     <style>
       ${emailStyles}

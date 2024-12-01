@@ -46,6 +46,7 @@ export const emailStyles = `
     color: #666666;
     display: flex;
     justify-content: space-between;
+    align-items: center;
   }
   .info-row strong {
     color: #333333;
@@ -91,16 +92,20 @@ export const emailStyles = `
     text-align: center;
     font-weight: 500;
   }
+  .photo-link-container {
+    margin-top: 10px;
+    text-align: center;
+  }
   .photo-link {
     display: inline-block;
     padding: 8px 16px;
-    background-color: #007bff;
+    background-color: #8B5CF6;
     color: white;
     text-decoration: none;
     border-radius: 4px;
     font-size: 14px;
   }
   .photo-link:hover {
-    background-color: #0056b3;
+    background-color: #7C3AED;
   }
 `;

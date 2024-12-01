@@ -21,8 +21,8 @@ export const createProductsSection = (order: any, isAdmin: boolean) => {
             <strong>${Number(item.price).toFixed(2)}€</strong>
           </div>
           ${isAdmin && item.photoUrl ? `
-            <div style="margin-top: 10px;">
-              <a href="${item.photoUrl}" class="photo-link">Ver Foto</a>
+            <div class="photo-link-container">
+              <a href="${item.photoUrl}" class="photo-link" target="_blank">Ver Foto</a>
             </div>
           ` : ''}
         </div>
