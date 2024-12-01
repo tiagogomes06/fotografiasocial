@@ -1,16 +1,19 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!isLoading && !session) {
-      navigate("/admin/login", { replace: true });
+      // Save the current path to redirect back after login
+      const currentPath = location.pathname;
+      navigate(`/admin/login?redirectTo=${encodeURIComponent(currentPath)}`, { replace: true });
     }
-  }, [session, isLoading, navigate]);
+  }, [session, isLoading, navigate, location]);
 
   if (isLoading) {
     return (
