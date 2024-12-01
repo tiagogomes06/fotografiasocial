@@ -17,6 +17,8 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
           className="h-auto max-h-[85vh] w-auto max-w-[90vw] object-contain select-none"
           onContextMenu={(e) => e.preventDefault()}
           draggable="false"
+          crossOrigin="anonymous"
+          loading="lazy"
         />
         <DialogClose asChild>
           <Button

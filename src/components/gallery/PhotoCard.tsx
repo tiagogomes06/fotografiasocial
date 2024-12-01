@@ -20,6 +20,8 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 select-none"
                 onContextMenu={(e) => e.preventDefault()}
                 draggable="false"
+                crossOrigin="anonymous"
+                loading="lazy"
               />
             </div>
           </DialogTrigger>

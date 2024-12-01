@@ -23,6 +23,8 @@ const PhotoCard = ({
   onProductDeselect,
   products,
 }: PhotoCardProps) => {
+  const [imageError, setImageError] = useState(false);
+
   const handleClick = () => {
     onSelect(photo);
   };
@@ -34,6 +36,16 @@ const PhotoCard = ({
       onProductSelect(productId, quantity);
     }
   };
+
+  if (imageError) {
+    return (
+      <Card className="group overflow-hidden relative">
+        <div className="aspect-square bg-gray-100 flex items-center justify-center text-gray-400">
+          Imagem não disponível
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="group overflow-hidden relative">
@@ -50,6 +62,9 @@ const PhotoCard = ({
           className="w-full h-full object-cover"
           onContextMenu={(e) => e.preventDefault()}
           draggable="false"
+          crossOrigin="anonymous"
+          loading="lazy"
+          onError={() => setImageError(true)}
         />
         {isSelected && (
           <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-in fade-in-0" />
