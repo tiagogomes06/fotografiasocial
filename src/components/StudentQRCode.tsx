@@ -13,7 +13,7 @@ interface StudentQRCodeProps {
 }
 
 const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProps) => {
-  const qrValue = `${window.location.origin}/access?code=${accessCode}`;
+  const qrValue = `https://fotografiasocial.duploefeito.com/access?code=${accessCode}`;
   const containerRef = useRef<HTMLDivElement>(null);
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
@@ -59,21 +59,11 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
       }
     };
 
-    fetchStudentInfo();
-  }, [studentId]);
-
-  const handleClick = async () => {
-    setIsOpen(true);
-    
-    // Pré-carregar o logótipo antes de gerar o PNG
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      setLogoLoaded(true);
-      setTimeout(generateQRCodePNG, 500);
-    };
-    img.src = "https://fotografiaescolar.duploefeito.com/logo.jpg";
-  };
+    if (isOpen) {
+      fetchStudentInfo();
+      generateQRCodePNG();
+    }
+  }, [studentId, isOpen]);
 
   const generateQRCodePNG = async () => {
     const container = containerRef.current;
@@ -112,7 +102,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" onClick={handleClick}>
+        <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
           <QrCode className="h-4 w-4 mr-1" />
           Código QR
         </Button>
@@ -160,7 +150,7 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
           <QRCodeSVG value={qrValue} size={256} />
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
-            <p className="text-sm text-muted-foreground">Site para acesso: fotografiaescolar.duploefeito.com</p>
+            <p className="text-sm text-muted-foreground">Site para acesso: fotografiasocial.duploefeito.com</p>
           </div>
         </div>
       </DialogContent>
