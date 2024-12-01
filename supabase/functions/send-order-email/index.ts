@@ -91,10 +91,7 @@ serve(async (req: Request) => {
     // Send email to customer
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
-      from: {
-        name: "Fotografia Escolar",
-        email: "encomendas@duploefeito.com",
-      },
+      from: "encomendas@duploefeito.com",
       to: order.email,
       subject: type === 'created' ? 
         `Nova Encomenda #${orderId}` : 
@@ -109,10 +106,7 @@ serve(async (req: Request) => {
       const adminEmailHtml = createEmailTemplate(order, type, true);
       
       await client.send({
-        from: {
-          name: "Fotografia Escolar",
-          email: "encomendas@duploefeito.com",
-        },
+        from: "encomendas@duploefeito.com",
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
         html: adminEmailHtml,
