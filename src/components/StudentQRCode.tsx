@@ -1,10 +1,8 @@
-import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import html2canvas from "html2canvas";
+import { useRef, useState } from "react";
+import QRCodeContent from "./qr-code/QRCodeContent";
 
 interface StudentQRCodeProps {
   accessCode: string;
@@ -13,91 +11,8 @@ interface StudentQRCodeProps {
 }
 
 const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProps) => {
-  const qrValue = `https://fotografiasocial.duploefeito.com/access?code=${accessCode}`;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
-  const [randomPhoto, setRandomPhoto] = useState<string>();
   const [isOpen, setIsOpen] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchStudentInfo = async () => {
-      const { data, error } = await supabase
-        .from('students')
-        .select(`
-          class_id,
-          classes:classes (
-            name,
-            schools:schools (
-              name
-            )
-          ),
-          photos (url)
-        `)
-        .eq('id', studentId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching student info:', error);
-        return;
-      }
-
-      if (data) {
-        setSchoolInfo({
-          schoolName: data.classes.schools.name,
-          className: data.classes.name
-        });
-
-        if (data.photos && data.photos.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.photos.length);
-          const photoUrl = data.photos[randomIndex].url;
-          const { data: publicUrl } = supabase.storage
-            .from('photos')
-            .getPublicUrl(photoUrl.split('/').pop() || '');
-          setRandomPhoto(publicUrl.publicUrl);
-        }
-      }
-    };
-
-    if (isOpen) {
-      fetchStudentInfo();
-      generateQRCodePNG();
-    }
-  }, [studentId, isOpen]);
-
-  const generateQRCodePNG = async () => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    try {
-      const canvas = await html2canvas(container, {
-        backgroundColor: "white",
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        onclone: function(clonedDoc) {
-          const images = clonedDoc.getElementsByTagName('img');
-          for (let img of images) {
-            img.crossOrigin = "anonymous";
-          }
-        }
-      });
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `qrcode-${studentName.toLowerCase().replace(/\s+/g, '-')}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, "image/png");
-    } catch (error) {
-      console.error("Error generating image:", error);
-    }
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -111,48 +26,12 @@ const StudentQRCode = ({ accessCode, studentName, studentId }: StudentQRCodeProp
         <DialogHeader>
           <DialogTitle>Código QR para {studentName}</DialogTitle>
         </DialogHeader>
-        <div 
-          ref={containerRef}
-          className="flex flex-col items-center justify-center p-6 space-y-4 bg-white"
-        >
-          <img 
-            src="https://fotografiaescolar.duploefeito.com/logo.jpg"
-            alt="Duplo Efeito" 
-            className="w-32 h-auto mb-4"
-            crossOrigin="anonymous"
-            onError={(e) => {
-              const img = e.target as HTMLImageElement;
-              img.style.display = 'none';
-            }}
-          />
-
-          {schoolInfo && (
-            <div className="text-center space-y-1">
-              <p className="font-semibold">{schoolInfo.schoolName}</p>
-              <p>{schoolInfo.className}</p>
-              <p>{studentName}</p>
-            </div>
-          )}
-
-          {randomPhoto && (
-            <img 
-              src={randomPhoto} 
-              alt={studentName}
-              className="w-32 h-32 object-cover rounded-lg"
-              crossOrigin="anonymous"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.display = 'none';
-              }}
-            />
-          )}
-
-          <QRCodeSVG value={qrValue} size={256} />
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">Código de Acesso: {accessCode}</p>
-            <p className="text-sm text-muted-foreground">Site para acesso: fotografiasocial.duploefeito.com</p>
-          </div>
-        </div>
+        <QRCodeContent
+          studentId={studentId}
+          studentName={studentName}
+          accessCode={accessCode}
+          containerRef={containerRef}
+        />
       </DialogContent>
     </Dialog>
   );
