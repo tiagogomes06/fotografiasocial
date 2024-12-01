@@ -1,16 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-import { createEmailTemplate } from './emailTemplates.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1"
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts"
+import { createEmailTemplate } from './emailTemplates.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -64,18 +64,15 @@ serve(async (req) => {
     // Create email content
     const emailHtml = createEmailTemplate(order, type, false, paymentDetails);
     
-    // Send customer email with simplified headers
+    // Send customer email with minimal headers
     await client.send({
       from: "encomendas@duploefeito.com",
       to: order.email,
       subject: type === 'created' ? 
         `Nova Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
-      html: emailHtml,
-      // Remove Content-Transfer-Encoding and let the library handle it
-      headers: {
-        "Content-Type": "text/html; charset=UTF-8"
-      }
+      content: emailHtml,
+      html: true
     });
 
     console.log('Customer email sent successfully');
@@ -87,11 +84,8 @@ serve(async (req) => {
         from: "encomendas@duploefeito.com",
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
-        html: adminEmailHtml,
-        // Remove Content-Transfer-Encoding and let the library handle it
-        headers: {
-          "Content-Type": "text/html; charset=UTF-8"
-        }
+        content: adminEmailHtml,
+        html: true
       });
       console.log('Admin notification email sent successfully');
     }
