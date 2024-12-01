@@ -54,7 +54,7 @@ const PhotoAccess = () => {
           />
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Bem-vindo(a)!</h1>
           <p className="text-gray-600 max-w-md mx-auto mb-8">
-            Aceda às suas fotografias escolares usando o código fornecido.
+            Aceda às suas fotografias e a loja online usando o código fornecido.
           </p>
         </motion.div>
 
