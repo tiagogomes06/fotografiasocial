@@ -58,8 +58,10 @@ serve(async (req) => {
     if (!order) throw new Error('Order not found');
     if (!order.email) throw new Error('No email address associated with order');
 
-    // Send customer email
+    // Create email content with proper encoding
     const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
+    
+    // Send customer email with content-transfer-encoding set to base64
     await client.send({
       from: "encomendas@duploefeito.com",
       to: order.email,
@@ -67,6 +69,10 @@ serve(async (req) => {
         `Nova Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
       html: customerEmailHtml,
+      headers: {
+        "Content-Transfer-Encoding": "quoted-printable",
+        "Content-Type": "text/html; charset=UTF-8"
+      }
     });
 
     // Send admin notification for paid orders
@@ -77,6 +83,10 @@ serve(async (req) => {
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
         html: adminEmailHtml,
+        headers: {
+          "Content-Transfer-Encoding": "quoted-printable",
+          "Content-Type": "text/html; charset=UTF-8"
+        }
       });
     }
 
