@@ -57,7 +57,7 @@ export const useCheckoutForm = (cart: CartItem[]) => {
 
     const selectedShippingMethod = await supabase
       .from("shipping_methods")
-      .select("*")  // Changed from "type" to "*" to get all fields
+      .select("*")
       .eq("id", shippingMethod)
       .single();
 
@@ -117,6 +117,19 @@ export const useCheckoutForm = (cart: CartItem[]) => {
           shippingCost,
           taxNumber: formData.wantsInvoice ? formData.taxNumber : null
         };
+
+        // Send order confirmation email for all payment methods except card
+        try {
+          await supabase.functions.invoke('send-order-email', {
+            body: { 
+              orderId: order.id,
+              type: 'created'
+            }
+          });
+        } catch (emailError) {
+          console.error('Error sending order confirmation email:', emailError);
+          toast.error('Erro ao enviar email de confirmação');
+        }
         
         if (paymentMethod === "mbway") {
           if (payment.error) {
