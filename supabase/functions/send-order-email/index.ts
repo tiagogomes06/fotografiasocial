@@ -88,7 +88,7 @@ serve(async (req) => {
     console.log('[send-order-email] Generating customer email template...');
     const customerEmailHtml = createEmailTemplate(order, type, false, paymentDetails);
 
-    // Send email to customer with proper headers
+    // Send email to customer with single Content-Type header
     console.log(`[send-order-email] Sending ${type} email to customer:`, order.email);
     await client.send({
       from: {
@@ -99,10 +99,8 @@ serve(async (req) => {
       subject: type === 'created' ? 
         `Confirmação de Encomenda #${orderId}` : 
         `Pagamento Confirmado - Encomenda #${orderId}`,
+      content: "text/html",
       html: customerEmailHtml,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-      },
     });
 
     // If payment is completed, also send notification to admin emails with photo links
@@ -118,10 +116,8 @@ serve(async (req) => {
         },
         to: ["gomes@duploefeito.com", "eu@tiagogomes.pt"],
         subject: `Novo Pagamento Recebido - Encomenda #${orderId}`,
+        content: "text/html",
         html: adminEmailHtml,
-        headers: {
-          "Content-Type": "text/html; charset=utf-8",
-        },
       });
       
       console.log('[send-order-email] Admin notifications sent');
