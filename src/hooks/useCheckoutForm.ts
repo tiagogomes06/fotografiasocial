@@ -9,9 +9,11 @@ import {
   createOrderItems, 
   processPayment 
 } from "@/utils/orderUtils";
+import { useCheckoutQueries } from "./useCheckoutQueries";
 
 export const useCheckoutForm = (cart: CartItem[]) => {
   const navigate = useNavigate();
+  const { shippingMethods, products } = useCheckoutQueries();
   const [shippingMethod, setShippingMethod] = useState("");
   const [formData, setFormData] = useState({
     name: "",
@@ -23,6 +25,12 @@ export const useCheckoutForm = (cart: CartItem[]) => {
   });
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const selectedShippingMethod = shippingMethods.find(
+    method => method.id === shippingMethod
+  );
+
+  const isPickupMethod = selectedShippingMethod?.type === "pickup";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +160,7 @@ export const useCheckoutForm = (cart: CartItem[]) => {
     paymentMethod,
     setPaymentMethod,
     isProcessing,
-    handleSubmit
+    handleSubmit,
+    isPickupMethod
   };
 };
