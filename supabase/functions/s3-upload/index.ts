@@ -64,17 +64,17 @@ serve(async (req) => {
       throw new Error('Failed to upload file');
     }
 
-    // Generate URL
-    const region = Deno.env.get('AWS_REGION') ?? 'eu-west-1';
-    const bucketName = Deno.env.get('AWS_BUCKET_NAME') ?? '';
-    const url = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(fileName);
 
-    console.log('Generated URL:', url);
+    console.log('Generated public URL:', publicUrl);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: url
+        url: publicUrl
       }),
       { 
         headers: { 
