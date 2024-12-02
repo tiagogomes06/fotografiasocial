@@ -28,7 +28,8 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Allow': 'POST, OPTIONS',
-      }
+      },
+      status: 204
     });
   }
 
@@ -152,7 +153,10 @@ serve(async (req) => {
         type: error.name
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }, 
         status: 500 
       }
     );
