@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -15,7 +14,6 @@ serve(async (req) => {
   try {
     console.log('Starting upload process...')
     
-    // Get file from request
     const formData = await req.formData()
     const file = formData.get('file')
     
@@ -30,8 +28,8 @@ serve(async (req) => {
     // Get AWS credentials
     const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID')
     const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')
-    const awsBucket = Deno.env.get('AWS_BUCKET_NAME')
-    const awsRegion = Deno.env.get('AWS_REGION')
+    const awsBucket = String(Deno.env.get('AWS_BUCKET_NAME'))
+    const awsRegion = String(Deno.env.get('AWS_REGION'))
 
     console.log('AWS Configuration:', {
       hasAccessKey: !!awsAccessKey,
@@ -44,13 +42,13 @@ serve(async (req) => {
       throw new Error('Missing AWS credentials or configuration')
     }
 
-    // Generate unique filename
-    const fileExt = file.name.split('.').pop()
-    const fileName = `photos/${crypto.randomUUID()}.${fileExt}`
+    // Generate unique filename with explicit string conversion
+    const fileExt = String(file.name.split('.').pop())
+    const fileName = `photos/${String(crypto.randomUUID())}.${fileExt}`
 
     console.log('File details:', {
-      name: file.name,
-      type: file.type,
+      name: String(file.name),
+      type: String(file.type),
       size: file.size,
       generatedPath: fileName
     })
@@ -67,12 +65,12 @@ serve(async (req) => {
       }
     })
 
-    // Create upload command
+    // Create upload command with explicit string paths
     const command = new PutObjectCommand({
-      Bucket: awsBucket,
-      Key: fileName,
+      Bucket: String(awsBucket),
+      Key: String(fileName),
       Body: arrayBuffer,
-      ContentType: file.type,
+      ContentType: String(file.type),
       ACL: 'public-read'
     })
 
@@ -80,8 +78,8 @@ serve(async (req) => {
     const uploadResult = await s3Client.send(command)
     console.log('S3 upload successful:', uploadResult)
 
-    // Generate the S3 URL
-    const s3Url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${fileName}`
+    // Generate the S3 URL with explicit string conversion
+    const s3Url = `https://${String(awsBucket)}.s3.${String(awsRegion)}.amazonaws.com/${String(fileName)}`
     console.log('Generated S3 URL:', s3Url)
 
     return new Response(
