@@ -7,15 +7,19 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    console.log('Starting upload process...')
+    
     const formData = await req.formData()
     const file = formData.get('file')
 
     if (!file) {
+      console.error('No file uploaded')
       throw new Error('No file uploaded')
     }
 
@@ -36,33 +40,31 @@ serve(async (req) => {
       throw new Error('Missing AWS credentials or configuration')
     }
 
-    // Generate unique filename
+    // Generate unique filename with explicit path
     const fileExt = file.name.split('.').pop()
     const fileName = `photos/${crypto.randomUUID()}.${fileExt}`
 
     console.log('File details:', {
       name: file.name,
       type: file.type,
-      size: file.size
+      size: file.size,
+      generatedPath: fileName
     })
-
-    console.log('Generated filename:', fileName)
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer()
 
-    // Initialize S3 client with minimal configuration
+    // Initialize S3 client with explicit configuration
     const s3Client = new S3Client({
       region: awsRegion,
       credentials: {
         accessKeyId: awsAccessKey,
         secretAccessKey: awsSecretKey
       },
-      endpoint: `https://s3.${awsRegion}.amazonaws.com`,
-      forcePathStyle: true
+      endpoint: `https://s3.${awsRegion}.amazonaws.com`
     })
 
-    // Upload to S3
+    // Create PutObjectCommand with explicit parameters
     const command = new PutObjectCommand({
       Bucket: awsBucket,
       Key: fileName,
@@ -72,6 +74,12 @@ serve(async (req) => {
     })
 
     try {
+      console.log('Attempting S3 upload with command:', {
+        bucket: awsBucket,
+        key: fileName,
+        contentType: file.type
+      })
+      
       const uploadResult = await s3Client.send(command)
       console.log('S3 upload successful:', uploadResult)
     } catch (uploadError) {
