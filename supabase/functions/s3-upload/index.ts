@@ -14,7 +14,7 @@ serve(async (req) => {
   try {
     console.log('Starting upload process...');
     
-    // Log environment variables (without exposing secrets)
+    // Get AWS credentials from environment
     const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID');
     const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY');
     const awsBucket = Deno.env.get('AWS_BUCKET_NAME');
@@ -45,15 +45,6 @@ serve(async (req) => {
       size: file.size
     });
 
-    // Initialize S3 client
-    const s3Client = new S3Client({
-      region: awsRegion,
-      credentials: {
-        accessKeyId: awsAccessKey,
-        secretAccessKey: awsSecretKey,
-      },
-    });
-
     const fileId = crypto.randomUUID();
     const fileExt = file.name.split('.').pop();
     const fileName = `photos/${fileId}.${fileExt}`;
@@ -63,13 +54,28 @@ serve(async (req) => {
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
 
+    // Initialize S3 client with explicit configuration
+    const s3Client = new S3Client({
+      region: awsRegion,
+      credentials: {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey
+      },
+      // Disable loading from shared config files
+      loadDefaultConfig: false,
+      // Force path-style endpoint
+      forcePathStyle: true,
+      // Explicitly set the endpoint
+      endpoint: `https://s3.${awsRegion}.amazonaws.com`
+    });
+
     // Upload to S3
     const command = new PutObjectCommand({
       Bucket: awsBucket,
       Key: fileName,
       Body: arrayBuffer,
       ContentType: file.type,
-      ACL: 'public-read', // Make sure the file is publicly readable
+      ACL: 'public-read'
     });
 
     try {
