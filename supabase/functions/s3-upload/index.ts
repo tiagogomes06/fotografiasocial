@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-s3/mod.ts"
+import { S3 } from "https://deno.land/x/s3@0.5.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +20,7 @@ serve(async (req) => {
     const awsBucket = Deno.env.get('AWS_BUCKET_NAME');
     const awsRegion = Deno.env.get('AWS_REGION');
 
-    console.log('AWS Configuration check:', {
+    console.log('AWS Configuration:', {
       hasAccessKey: !!awsAccessKey,
       hasSecretKey: !!awsSecretKey,
       bucket: awsBucket,
@@ -51,44 +51,33 @@ serve(async (req) => {
 
     console.log('Generated filename:', fileName);
 
-    // Convert File to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
-
-    // Initialize S3 client with minimal configuration
-    const s3Client = new S3Client({
+    // Initialize S3 client
+    const s3 = new S3({
+      accessKeyID: awsAccessKey,
+      secretKey: awsSecretKey,
       region: awsRegion,
-      credentials: {
-        accessKeyId: awsAccessKey,
-        secretAccessKey: awsSecretKey
-      },
-      // Explicitly set the endpoint and disable auto-configuration
-      endpoint: `https://s3.${awsRegion}.amazonaws.com`,
-      forcePathStyle: true,
-      // Disable all automatic configuration loading
-      loadDefaultConfig: false,
-      loadConfigFiles: false,
-      loadSharedConfigFiles: false,
-      loadNodeConfigFiles: false
     });
 
-    // Upload to S3
-    const command = new PutObjectCommand({
-      Bucket: awsBucket,
-      Key: fileName,
-      Body: arrayBuffer,
-      ContentType: file.type,
-      ACL: 'public-read'
-    });
+    // Convert File to ArrayBuffer and then to Uint8Array
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
 
     try {
-      const uploadResult = await s3Client.send(command);
-      console.log('S3 upload successful:', uploadResult);
+      // Upload to S3
+      await s3.putObject({
+        bucket: awsBucket,
+        key: fileName,
+        body: uint8Array,
+        contentType: file.type,
+        acl: "public-read",
+      });
+
+      console.log('S3 upload successful');
     } catch (uploadError) {
       console.error('S3 upload error details:', {
         error: uploadError,
         message: uploadError.message,
         stack: uploadError.stack,
-        name: uploadError.name
       });
       throw new Error(`Failed to upload file to S3: ${uploadError.message}`);
     }
