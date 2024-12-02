@@ -1,25 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3"
-import Sharp from "npm:sharp";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 }
-
-console.log('Initializing S3 client with region:', Deno.env.get('AWS_REGION'));
-
-const s3Client = new S3Client({
-  region: Deno.env.get('AWS_REGION') ?? 'eu-west-1',
-  credentials: {
-    accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') ?? '',
-    secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') ?? '',
-  },
-});
-
-const BUCKET_NAME = Deno.env.get('AWS_BUCKET_NAME') ?? '';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -34,30 +19,21 @@ serve(async (req) => {
   }
 
   try {
-    if (req.method !== 'POST') {
-      throw new Error(`Method ${req.method} not allowed`);
-    }
-
     console.log('Starting upload process...');
     console.log('Environment check:', {
-      hasAccessKey: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
-      hasSecretKey: !!Deno.env.get('AWS_SECRET_ACCESS_KEY'),
-      bucketName: BUCKET_NAME,
-      region: Deno.env.get('AWS_REGION')
+      hasUrl: !!Deno.env.get('SUPABASE_URL'),
+      hasServiceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      hasAwsAccess: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
+      hasAwsSecret: !!Deno.env.get('AWS_SECRET_ACCESS_KEY'),
+      hasAwsBucket: !!Deno.env.get('AWS_BUCKET_NAME'),
+      hasAwsRegion: !!Deno.env.get('AWS_REGION')
     });
-
-    if (!Deno.env.get('AWS_ACCESS_KEY_ID') || !Deno.env.get('AWS_SECRET_ACCESS_KEY')) {
-      throw new Error('AWS credentials are missing');
-    }
-
-    if (!BUCKET_NAME) {
-      throw new Error('AWS bucket name is missing');
-    }
 
     const formData = await req.formData();
     const file = formData.get('file');
-    
+
     if (!file || !(file instanceof File)) {
+      console.error('No file uploaded or invalid file');
       throw new Error('Missing or invalid file');
     }
 
@@ -66,6 +42,11 @@ serve(async (req) => {
       type: file.type,
       size: file.size
     });
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const fileId = crypto.randomUUID();
     const fileExt = file.name.split('.').pop();
@@ -77,7 +58,7 @@ serve(async (req) => {
     // Upload original file
     const arrayBuffer = await file.arrayBuffer();
     const originalUploadParams = {
-      Bucket: BUCKET_NAME,
+      Bucket: Deno.env.get('AWS_BUCKET_NAME') ?? '',
       Key: originalFileName,
       Body: new Uint8Array(arrayBuffer),
       ContentType: file.type,
@@ -87,40 +68,24 @@ serve(async (req) => {
       },
     };
 
-    console.log('Uploading original to S3...');
-    await s3Client.send(new PutObjectCommand(originalUploadParams));
+    console.log('Uploading to S3...');
+    const { data, error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(originalFileName, file, {
+        contentType: file.type,
+        upsert: false
+      });
 
-    // Create compressed version
-    const compressedBuffer = await Sharp(arrayBuffer)
-      .resize(800, 800, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .jpeg({
-        quality: 80,
-        progressive: true
-      })
-      .toBuffer();
-
-    // Upload compressed file
-    const compressedUploadParams = {
-      Bucket: BUCKET_NAME,
-      Key: compressedFileName,
-      Body: compressedBuffer,
-      ContentType: 'image/jpeg',
-      ACL: 'public-read',
-      Metadata: {
-        'x-amz-acl': 'public-read',
-      },
-    };
-
-    console.log('Uploading compressed version to S3...');
-    await s3Client.send(new PutObjectCommand(compressedUploadParams));
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error('Failed to upload file');
+    }
 
     // Generate URLs
     const region = Deno.env.get('AWS_REGION') ?? 'eu-west-1';
-    const originalUrl = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${originalFileName}`;
-    const compressedUrl = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${compressedFileName}`;
+    const bucketName = Deno.env.get('AWS_BUCKET_NAME') ?? '';
+    const originalUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${originalFileName}`;
+    const compressedUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${compressedFileName}`;
 
     console.log('Generated URLs:', { originalUrl, compressedUrl });
 
@@ -133,7 +98,7 @@ serve(async (req) => {
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         }, 
         status: 200 
       }
