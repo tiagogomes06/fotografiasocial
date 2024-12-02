@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { S3Client, PutObjectCommand } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-s3/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,16 +7,18 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders,
-      status: 204
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     console.log('Starting upload process...');
+    console.log('Environment check:', {
+      hasAwsAccess: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
+      hasAwsSecret: !!Deno.env.get('AWS_SECRET_ACCESS_KEY'),
+      hasAwsBucket: !!Deno.env.get('AWS_BUCKET_NAME'),
+      hasAwsRegion: !!Deno.env.get('AWS_REGION')
+    });
 
     const formData = await req.formData();
     const file = formData.get('file');
@@ -32,10 +34,14 @@ serve(async (req) => {
       size: file.size
     });
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Initialize S3 client
+    const s3Client = new S3Client({
+      region: Deno.env.get('AWS_REGION') || 'eu-west-1',
+      credentials: {
+        accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') || '',
+        secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') || '',
+      },
+    });
 
     const fileId = crypto.randomUUID();
     const fileExt = file.name.split('.').pop();
@@ -43,36 +49,36 @@ serve(async (req) => {
 
     console.log('Generated filename:', fileName);
 
-    // Upload file to photos bucket
-    const { data, error: uploadError } = await supabase.storage
-      .from('photos')
-      .upload(fileName, file, {
-        contentType: file.type,
-        upsert: false
-      });
+    // Convert File to ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error('Failed to upload file');
+    // Upload to S3
+    const command = new PutObjectCommand({
+      Bucket: Deno.env.get('AWS_BUCKET_NAME') || 'fotosduplo',
+      Key: fileName,
+      Body: arrayBuffer,
+      ContentType: file.type,
+    });
+
+    try {
+      await s3Client.send(command);
+      console.log('File uploaded successfully to S3');
+    } catch (uploadError) {
+      console.error('S3 upload error:', uploadError);
+      throw new Error('Failed to upload file to S3');
     }
 
-    // Get the public URL from the photos bucket
-    const { data: { publicUrl } } = supabase.storage
-      .from('photos')
-      .getPublicUrl(fileName);
-
-    console.log('Generated public URL:', publicUrl);
+    // Generate the S3 URL
+    const s3Url = `https://${Deno.env.get('AWS_BUCKET_NAME')}.s3.${Deno.env.get('AWS_REGION')}.amazonaws.com/${fileName}`;
+    console.log('Generated S3 URL:', s3Url);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: publicUrl
+        url: s3Url
       }),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        }, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 
       }
     );
@@ -91,10 +97,7 @@ serve(async (req) => {
         type: error.name
       }),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        }, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500 
       }
     );
