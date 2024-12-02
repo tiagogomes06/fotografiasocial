@@ -42,15 +42,12 @@ serve(async (req) => {
       throw new Error('Missing AWS credentials or configuration')
     }
 
-    // Generate unique filename with explicit string conversion
-    const fileExt = String(file.name.split('.').pop())
-    const fileName = `photos/${String(crypto.randomUUID())}.${fileExt}`
-
+    // Keep original file name but ensure it's a string
+    const fileName = String(file.name)
     console.log('File details:', {
-      name: String(file.name),
+      name: fileName,
       type: String(file.type),
-      size: file.size,
-      generatedPath: fileName
+      size: file.size
     })
 
     // Convert File to ArrayBuffer
