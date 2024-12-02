@@ -13,12 +13,23 @@ serve(async (req) => {
 
   try {
     console.log('Starting upload process...');
-    console.log('Environment check:', {
-      hasAwsAccess: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
-      hasAwsSecret: !!Deno.env.get('AWS_SECRET_ACCESS_KEY'),
-      hasAwsBucket: !!Deno.env.get('AWS_BUCKET_NAME'),
-      hasAwsRegion: !!Deno.env.get('AWS_REGION')
+    
+    // Log environment variables (without exposing secrets)
+    const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID');
+    const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY');
+    const awsBucket = Deno.env.get('AWS_BUCKET_NAME');
+    const awsRegion = Deno.env.get('AWS_REGION');
+
+    console.log('AWS Configuration check:', {
+      hasAccessKey: !!awsAccessKey,
+      hasSecretKey: !!awsSecretKey,
+      bucket: awsBucket,
+      region: awsRegion
     });
+
+    if (!awsAccessKey || !awsSecretKey || !awsBucket || !awsRegion) {
+      throw new Error('Missing AWS credentials or configuration');
+    }
 
     const formData = await req.formData();
     const file = formData.get('file');
@@ -36,10 +47,10 @@ serve(async (req) => {
 
     // Initialize S3 client
     const s3Client = new S3Client({
-      region: Deno.env.get('AWS_REGION') || 'eu-west-1',
+      region: awsRegion,
       credentials: {
-        accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID') || '',
-        secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY') || '',
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey,
       },
     });
 
@@ -54,22 +65,28 @@ serve(async (req) => {
 
     // Upload to S3
     const command = new PutObjectCommand({
-      Bucket: Deno.env.get('AWS_BUCKET_NAME') || 'fotosduplo',
+      Bucket: awsBucket,
       Key: fileName,
       Body: arrayBuffer,
       ContentType: file.type,
+      ACL: 'public-read', // Make sure the file is publicly readable
     });
 
     try {
-      await s3Client.send(command);
-      console.log('File uploaded successfully to S3');
+      const uploadResult = await s3Client.send(command);
+      console.log('S3 upload successful:', uploadResult);
     } catch (uploadError) {
-      console.error('S3 upload error:', uploadError);
-      throw new Error('Failed to upload file to S3');
+      console.error('S3 upload error details:', {
+        error: uploadError,
+        message: uploadError.message,
+        stack: uploadError.stack,
+        name: uploadError.name
+      });
+      throw new Error(`Failed to upload file to S3: ${uploadError.message}`);
     }
 
     // Generate the S3 URL
-    const s3Url = `https://${Deno.env.get('AWS_BUCKET_NAME')}.s3.${Deno.env.get('AWS_REGION')}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${fileName}`;
     console.log('Generated S3 URL:', s3Url);
 
     return new Response(
