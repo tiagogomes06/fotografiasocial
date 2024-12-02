@@ -10,10 +10,7 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Allow': 'POST, OPTIONS',
-      },
+      headers: corsHeaders,
       status: 204
     });
   }
@@ -50,28 +47,14 @@ serve(async (req) => {
 
     const fileId = crypto.randomUUID();
     const fileExt = file.name.split('.').pop();
-    const originalFileName = `photos/${fileId}.${fileExt}`;
-    const compressedFileName = `photos/${fileId}_compressed.${fileExt}`;
+    const fileName = `photos/${fileId}.${fileExt}`;
 
-    console.log('Generated filenames:', { originalFileName, compressedFileName });
+    console.log('Generated filename:', fileName);
 
-    // Upload original file
-    const arrayBuffer = await file.arrayBuffer();
-    const originalUploadParams = {
-      Bucket: Deno.env.get('AWS_BUCKET_NAME') ?? '',
-      Key: originalFileName,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
-      ACL: 'public-read',
-      Metadata: {
-        'x-amz-acl': 'public-read',
-      },
-    };
-
-    console.log('Uploading to S3...');
+    // Upload file
     const { data, error: uploadError } = await supabase.storage
       .from('photos')
-      .upload(originalFileName, file, {
+      .upload(fileName, file, {
         contentType: file.type,
         upsert: false
       });
@@ -81,19 +64,17 @@ serve(async (req) => {
       throw new Error('Failed to upload file');
     }
 
-    // Generate URLs
+    // Generate URL
     const region = Deno.env.get('AWS_REGION') ?? 'eu-west-1';
     const bucketName = Deno.env.get('AWS_BUCKET_NAME') ?? '';
-    const originalUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${originalFileName}`;
-    const compressedUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${compressedFileName}`;
+    const url = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
 
-    console.log('Generated URLs:', { originalUrl, compressedUrl });
+    console.log('Generated URL:', url);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: originalUrl,
-        compressedUrl: compressedUrl
+        url: url
       }),
       { 
         headers: { 

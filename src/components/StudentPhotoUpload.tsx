@@ -5,7 +5,6 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhoto } from "@/utils/supabaseHelpers";
 import { Progress } from "@/components/ui/progress";
-import imageCompression from "browser-image-compression";
 
 interface StudentPhotoUploadProps {
   studentId: string;
@@ -19,31 +18,6 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
   const [isOpen, setIsOpen] = useState(false);
   const [currentFile, setCurrentFile] = useState<string>("");
 
-  const compressImage = async (file: File) => {
-    const options = {
-      maxSizeMB: 1,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-      onProgress: (progress: number) => {
-        console.log('Compressão:', Math.round(progress * 100) + '%');
-        setUploadProgress(Math.round(progress * 50)); // Use metade da barra para compressão
-      }
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      console.log('Compressão concluída:', {
-        originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-        compressedSize: (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB',
-        filename: file.name
-      });
-      return compressedFile;
-    } catch (error) {
-      console.error("Erro na compressão:", error);
-      return file;
-    }
-  };
-
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -56,7 +30,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       const totalFiles = fileArray.length;
       let completedFiles = 0;
 
-      // Processar arquivos em lotes de 3
+      // Process files in batches of 3
       const batchSize = 3;
       for (let i = 0; i < fileArray.length; i += batchSize) {
         const batch = fileArray.slice(i, i + batchSize);
@@ -69,22 +43,15 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
 
           setCurrentFile(file.name);
           
-          // Comprimir imagem antes do upload
-          const compressedFile = await compressImage(file);
-          
-          // Upload da imagem comprimida
-          const photo = await uploadPhoto(compressedFile, studentId);
+          const photo = await uploadPhoto(file, studentId);
           completedFiles++;
-          
-          // Atualizar progresso (50-100% para uploads)
-          setUploadProgress(50 + ((completedFiles / totalFiles) * 50));
+          setUploadProgress((completedFiles / totalFiles) * 100);
           
           return photo;
         });
 
         const results = await Promise.all(uploadPromises);
         
-        // Notificar uploads bem sucedidos
         results.filter(Boolean).forEach(photo => {
           if (photo) {
             onPhotoUploaded(photo.url);
@@ -95,7 +62,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
 
     } catch (error) {
       console.error('Erro no upload:', error);
-      toast.error(`Falha ao carregar fotografias: ${error.message}`);
+      toast.error(`Erro no upload: ${error.message}`);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -129,7 +96,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
             <div className="space-y-2">
               <Progress value={uploadProgress} />
               <p className="text-sm text-muted-foreground text-center">
-                {uploadProgress <= 50 ? 'Comprimindo...' : 'Carregando...'} {Math.round(uploadProgress)}%
+                Carregando... {Math.round(uploadProgress)}%
                 {currentFile && (
                   <span className="block text-xs">
                     Processando: {currentFile}
@@ -140,7 +107,6 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
           )}
           <p className="text-sm text-muted-foreground">
             Formatos suportados: JPG, PNG, GIF. Pode selecionar várias fotografias.
-            As imagens serão automaticamente otimizadas para melhor performance.
           </p>
         </div>
       </DialogContent>
