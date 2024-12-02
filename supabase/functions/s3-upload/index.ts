@@ -35,8 +35,8 @@ serve(async (req) => {
     // Get AWS credentials
     const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID')
     const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')
-    const awsBucket = String(Deno.env.get('AWS_BUCKET_NAME'))
-    const awsRegion = String(Deno.env.get('AWS_REGION'))
+    const awsBucket = Deno.env.get('AWS_BUCKET_NAME')
+    const awsRegion = Deno.env.get('AWS_REGION')
 
     console.log('AWS Configuration:', {
       hasAccessKey: !!awsAccessKey,
@@ -49,32 +49,34 @@ serve(async (req) => {
       throw new Error('Missing AWS credentials or configuration')
     }
 
-    // Keep original file name but ensure it's a string
-    const fileName = String(file.name)
+    // Initialize S3 client with explicit credentials
+    const s3Client = new S3Client({
+      region: awsRegion,
+      credentials: {
+        accessKeyId: awsAccessKey,
+        secretAccessKey: awsSecretKey,
+      },
+      // Disable loading credentials from shared config files
+      loadDefaultConfig: false
+    })
+
+    // Use original filename
+    const fileName = file.name
     console.log('File details:', {
       name: fileName,
-      type: String(file.type),
+      type: file.type,
       size: file.size
     })
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer()
 
-    // Initialize S3 client
-    const s3Client = new S3Client({
-      region: awsRegion,
-      credentials: {
-        accessKeyId: awsAccessKey,
-        secretAccessKey: awsSecretKey
-      }
-    })
-
-    // Create upload command with explicit string paths
+    // Create upload command
     const command = new PutObjectCommand({
-      Bucket: String(awsBucket),
-      Key: String(fileName),
+      Bucket: awsBucket,
+      Key: fileName,
       Body: arrayBuffer,
-      ContentType: String(file.type),
+      ContentType: file.type,
       ACL: 'public-read'
     })
 
@@ -82,8 +84,8 @@ serve(async (req) => {
     const uploadResult = await s3Client.send(command)
     console.log('S3 upload successful:', uploadResult)
 
-    // Generate the S3 URL with explicit string conversion
-    const s3Url = `https://${String(awsBucket)}.s3.${String(awsRegion)}.amazonaws.com/${String(fileName)}`
+    // Generate the S3 URL
+    const s3Url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${fileName}`
     console.log('Generated S3 URL:', s3Url)
 
     return new Response(
