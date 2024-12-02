@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-s3/mod.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -25,100 +26,60 @@ serve(async (req) => {
       )
     }
 
-    // Get AWS credentials and ensure they are strings
-    const awsAccessKey = String(Deno.env.get('AWS_ACCESS_KEY_ID') || '')
-    const awsSecretKey = String(Deno.env.get('AWS_SECRET_ACCESS_KEY') || '')
-    const awsBucket = String(Deno.env.get('AWS_BUCKET_NAME') || '')
-    const awsRegion = String(Deno.env.get('AWS_REGION') || '')
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    console.log('AWS Configuration:', {
-      hasAccessKey: !!awsAccessKey,
-      hasSecretKey: !!awsSecretKey,
-      bucket: awsBucket,
-      region: awsRegion
-    })
+    // Generate a unique filename while keeping the original extension
+    const fileExt = file.name.split('.').pop()
+    const uniqueFileName = `${crypto.randomUUID()}.${fileExt}`
+    console.log('Generated unique filename:', uniqueFileName)
 
-    if (!awsAccessKey || !awsSecretKey || !awsBucket || !awsRegion) {
-      throw new Error('Missing AWS credentials or configuration')
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('photos')
+      .upload(uniqueFileName, file, {
+        contentType: file.type,
+        upsert: false
+      })
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to upload file', details: uploadError }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
 
-    // Initialize S3 client with explicit configuration
-    const s3Client = new S3Client({
-      region: awsRegion,
-      credentials: {
-        accessKeyId: awsAccessKey,
-        secretAccessKey: awsSecretKey,
-      },
-      // Explicitly set configuration to prevent loading from shared files
-      loadDefaultConfig: false,
-      runtime: "deno",
-      tls: true,
-      requestHandler: {
-        metadata: { handlerProtocol: "fetch" }
-      }
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('photos')
+      .getPublicUrl(uniqueFileName)
+
+    console.log('File uploaded successfully:', {
+      originalName: file.name,
+      storagePath: uniqueFileName,
+      publicUrl: publicUrl
     })
-
-    // Keep original file name but ensure it's a string
-    const fileName = String(file.name)
-    console.log('File details:', {
-      name: fileName,
-      type: String(file.type),
-      size: file.size
-    })
-
-    // Convert File to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer()
-
-    // Create upload command with explicit string paths
-    const command = new PutObjectCommand({
-      Bucket: awsBucket,
-      Key: fileName,
-      Body: arrayBuffer,
-      ContentType: String(file.type),
-      ACL: 'public-read'
-    })
-
-    console.log('Attempting S3 upload...')
-    const uploadResult = await s3Client.send(command)
-    console.log('S3 upload successful:', uploadResult)
-
-    // Generate the S3 URL with explicit string conversion
-    const s3Url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${fileName}`
-    console.log('Generated S3 URL:', s3Url)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        url: s3Url
+        url: publicUrl
       }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        },
-        status: 200 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 
   } catch (error) {
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    })
-
+    console.error('Error in upload process:', error)
     return new Response(
       JSON.stringify({ 
         error: error.message,
         details: error.stack
       }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        },
-        status: 500 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
 })
