@@ -17,14 +17,6 @@ serve(async (req) => {
 
   try {
     console.log('Starting upload process...');
-    console.log('Environment check:', {
-      hasUrl: !!Deno.env.get('SUPABASE_URL'),
-      hasServiceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-      hasAwsAccess: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
-      hasAwsSecret: !!Deno.env.get('AWS_SECRET_ACCESS_KEY'),
-      hasAwsBucket: !!Deno.env.get('AWS_BUCKET_NAME'),
-      hasAwsRegion: !!Deno.env.get('AWS_REGION')
-    });
 
     const formData = await req.formData();
     const file = formData.get('file');
@@ -51,7 +43,7 @@ serve(async (req) => {
 
     console.log('Generated filename:', fileName);
 
-    // Upload file
+    // Upload file to photos bucket
     const { data, error: uploadError } = await supabase.storage
       .from('photos')
       .upload(fileName, file, {
@@ -64,7 +56,7 @@ serve(async (req) => {
       throw new Error('Failed to upload file');
     }
 
-    // Get the public URL
+    // Get the public URL from the photos bucket
     const { data: { publicUrl } } = supabase.storage
       .from('photos')
       .getPublicUrl(fileName);
