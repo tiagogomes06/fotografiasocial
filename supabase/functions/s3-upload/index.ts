@@ -5,6 +5,8 @@ import Sharp from "npm:sharp";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 console.log('Initializing S3 client with region:', Deno.env.get('AWS_REGION'));
@@ -20,11 +22,21 @@ const s3Client = new S3Client({
 const BUCKET_NAME = Deno.env.get('AWS_BUCKET_NAME') ?? '';
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Allow': 'POST, OPTIONS',
+      }
+    });
   }
 
   try {
+    if (req.method !== 'POST') {
+      throw new Error(`Method ${req.method} not allowed`);
+    }
+
     console.log('Starting upload process...');
     console.log('Environment check:', {
       hasAccessKey: !!Deno.env.get('AWS_ACCESS_KEY_ID'),
