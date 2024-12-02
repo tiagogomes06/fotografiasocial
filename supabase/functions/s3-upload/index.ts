@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { S3Client, PutObjectCommand } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-s3/mod.ts";
+import { S3Client, PutObjectCommand } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-s3/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +8,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -54,19 +54,21 @@ serve(async (req) => {
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
 
-    // Initialize S3 client with explicit configuration
+    // Initialize S3 client with minimal configuration
     const s3Client = new S3Client({
       region: awsRegion,
       credentials: {
         accessKeyId: awsAccessKey,
         secretAccessKey: awsSecretKey
       },
-      // Disable loading from shared config files
-      loadDefaultConfig: false,
-      // Force path-style endpoint
+      // Explicitly set the endpoint and disable auto-configuration
+      endpoint: `https://s3.${awsRegion}.amazonaws.com`,
       forcePathStyle: true,
-      // Explicitly set the endpoint
-      endpoint: `https://s3.${awsRegion}.amazonaws.com`
+      // Disable all automatic configuration loading
+      loadDefaultConfig: false,
+      loadConfigFiles: false,
+      loadSharedConfigFiles: false,
+      loadNodeConfigFiles: false
     });
 
     // Upload to S3
