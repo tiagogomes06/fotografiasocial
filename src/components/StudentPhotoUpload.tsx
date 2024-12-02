@@ -26,6 +26,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       useWebWorker: true,
       onProgress: (progress: number) => {
         console.log('Compressão:', Math.round(progress * 100) + '%');
+        setUploadProgress(Math.round(progress * 50)); // Use metade da barra para compressão
       }
     };
 
@@ -33,7 +34,8 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       const compressedFile = await imageCompression(file, options);
       console.log('Compressão concluída:', {
         originalSize: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-        compressedSize: (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB'
+        compressedSize: (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB',
+        filename: file.name
       });
       return compressedFile;
     } catch (error) {
@@ -54,51 +56,51 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
       const totalFiles = fileArray.length;
       let completedFiles = 0;
 
-      // Processar arquivos em paralelo com limite de 3 uploads simultâneos
+      // Processar arquivos em lotes de 3
       const batchSize = 3;
       for (let i = 0; i < fileArray.length; i += batchSize) {
         const batch = fileArray.slice(i, i + batchSize);
+        
         const uploadPromises = batch.map(async (file) => {
           if (!file.type.startsWith('image/')) {
-            toast.error(`O arquivo ${file.name} não é uma imagem`);
+            toast.error(`O arquivo ${file.name} não é uma imagem válida`);
             return null;
           }
 
           setCurrentFile(file.name);
           
-          // Comprimir imagem
+          // Comprimir imagem antes do upload
           const compressedFile = await compressImage(file);
           
+          // Upload da imagem comprimida
           const photo = await uploadPhoto(compressedFile, studentId);
           completedFiles++;
-          setUploadProgress((completedFiles / totalFiles) * 100);
+          
+          // Atualizar progresso (50-100% para uploads)
+          setUploadProgress(50 + ((completedFiles / totalFiles) * 50));
           
           return photo;
         });
 
         const results = await Promise.all(uploadPromises);
         
-        // Filtrar uploads bem sucedidos e notificar
-        const successfulUploads = results.filter(result => result !== null);
-        successfulUploads.forEach(photo => {
+        // Notificar uploads bem sucedidos
+        results.filter(Boolean).forEach(photo => {
           if (photo) {
             onPhotoUploaded(photo.url);
+            toast.success(`Fotografia ${currentFile} carregada com sucesso`);
           }
         });
       }
 
-      if (completedFiles > 0) {
-        toast.success(`${completedFiles} fotografias carregadas com sucesso`);
-      }
-
-      setIsOpen(false);
     } catch (error) {
-      toast.error('Falha ao carregar fotografias');
-      console.error(error);
+      console.error('Erro no upload:', error);
+      toast.error(`Falha ao carregar fotografias: ${error.message}`);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
       setCurrentFile("");
+      setIsOpen(false);
     }
   };
 
@@ -127,7 +129,7 @@ const StudentPhotoUpload = ({ studentId, studentName, onPhotoUploaded }: Student
             <div className="space-y-2">
               <Progress value={uploadProgress} />
               <p className="text-sm text-muted-foreground text-center">
-                A carregar... {Math.round(uploadProgress)}%
+                {uploadProgress <= 50 ? 'Comprimindo...' : 'Carregando...'} {Math.round(uploadProgress)}%
                 {currentFile && (
                   <span className="block text-xs">
                     Processando: {currentFile}
