@@ -7,12 +7,8 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders,
-      status: 204
-    })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -25,18 +21,15 @@ serve(async (req) => {
       console.error('No file uploaded')
       return new Response(
         JSON.stringify({ error: 'No file uploaded' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-          status: 400 
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
-    // Get AWS credentials
-    const awsAccessKey = Deno.env.get('AWS_ACCESS_KEY_ID')
-    const awsSecretKey = Deno.env.get('AWS_SECRET_ACCESS_KEY')
-    const awsBucket = Deno.env.get('AWS_BUCKET_NAME')
-    const awsRegion = Deno.env.get('AWS_REGION')
+    // Get AWS credentials and ensure they are strings
+    const awsAccessKey = String(Deno.env.get('AWS_ACCESS_KEY_ID') || '')
+    const awsSecretKey = String(Deno.env.get('AWS_SECRET_ACCESS_KEY') || '')
+    const awsBucket = String(Deno.env.get('AWS_BUCKET_NAME') || '')
+    const awsRegion = String(Deno.env.get('AWS_REGION') || '')
 
     console.log('AWS Configuration:', {
       hasAccessKey: !!awsAccessKey,
@@ -49,34 +42,39 @@ serve(async (req) => {
       throw new Error('Missing AWS credentials or configuration')
     }
 
-    // Initialize S3 client with explicit credentials
+    // Initialize S3 client with explicit configuration
     const s3Client = new S3Client({
       region: awsRegion,
       credentials: {
         accessKeyId: awsAccessKey,
         secretAccessKey: awsSecretKey,
       },
-      // Disable loading credentials from shared config files
-      loadDefaultConfig: false
+      // Explicitly set configuration to prevent loading from shared files
+      loadDefaultConfig: false,
+      runtime: "deno",
+      tls: true,
+      requestHandler: {
+        metadata: { handlerProtocol: "fetch" }
+      }
     })
 
-    // Use original filename
-    const fileName = file.name
+    // Keep original file name but ensure it's a string
+    const fileName = String(file.name)
     console.log('File details:', {
       name: fileName,
-      type: file.type,
+      type: String(file.type),
       size: file.size
     })
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer()
 
-    // Create upload command
+    // Create upload command with explicit string paths
     const command = new PutObjectCommand({
       Bucket: awsBucket,
       Key: fileName,
       Body: arrayBuffer,
-      ContentType: file.type,
+      ContentType: String(file.type),
       ACL: 'public-read'
     })
 
@@ -84,7 +82,7 @@ serve(async (req) => {
     const uploadResult = await s3Client.send(command)
     console.log('S3 upload successful:', uploadResult)
 
-    // Generate the S3 URL
+    // Generate the S3 URL with explicit string conversion
     const s3Url = `https://${awsBucket}.s3.${awsRegion}.amazonaws.com/${fileName}`
     console.log('Generated S3 URL:', s3Url)
 
