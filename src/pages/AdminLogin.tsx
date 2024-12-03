@@ -52,6 +52,8 @@ const AdminLogin = () => {
               },
             }}
             providers={[]}
+            view="sign_in"
+            showLinks={false}
           />
         </div>
       </div>
