@@ -41,10 +41,10 @@ const PhotoModal = ({ photo, index }: PhotoModalProps) => {
           onContextMenu={(e) => e.preventDefault()}
           draggable="false"
           crossOrigin="anonymous"
-          loading="lazy"
+          loading="eager"
           onLoadError={() => setImageError(true)}
-          maxRetries={5}
-          retryDelay={1500}
+          maxRetries={10}
+          retryDelay={500}
         />
         <DialogClose asChild>
           <Button

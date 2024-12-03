@@ -12,8 +12,8 @@ const RetryImage = ({
   src,
   alt,
   className,
-  maxRetries = 3,
-  retryDelay = 2000,
+  maxRetries = 10,
+  retryDelay = 500,
   onLoadSuccess,
   onLoadError,
   ...props

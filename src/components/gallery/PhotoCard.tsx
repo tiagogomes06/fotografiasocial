@@ -39,8 +39,10 @@ const PhotoCard = ({ photo, index }: PhotoCardProps) => {
                 onContextMenu={(e) => e.preventDefault()}
                 draggable="false"
                 crossOrigin="anonymous"
-                loading="lazy"
+                loading="eager"
                 onLoadError={() => setImageError(true)}
+                maxRetries={10}
+                retryDelay={500}
               />
             </div>
           </DialogTrigger>
