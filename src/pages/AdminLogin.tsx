@@ -31,9 +31,9 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Painel de Administração</h1>
+          <h1 className="text-2xl font-bold">Painel de gestão - DUPLO EFEITO</h1>
           <p className="text-muted-foreground mt-2">
-            Faça login para acessar o painel
+            Faça login para aceder ao painel de gestão
           </p>
         </div>
 
