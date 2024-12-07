@@ -28,7 +28,6 @@ const PhotoAccess = () => {
         try {
           const result = await verifyAccessCode(code);
           if (result.success) {
-            // Update the route state with the authentication result
             navigate("/", { 
               state: { 
                 photos: result.photos,
@@ -74,10 +73,11 @@ const PhotoAccess = () => {
           className="text-center mb-8"
         >
           <img
-            src="https://fotografiaescolar.duploefeito.com/logo.jpg"
+            src="/logo.jpg"
             alt="Duplo Efeito"
             className="w-32 h-auto mb-4 mx-auto"
             onError={(e) => {
+              console.error("Error loading logo:", e);
               const img = e.target as HTMLImageElement;
               img.style.display = 'none';
             }}
