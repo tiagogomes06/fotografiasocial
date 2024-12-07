@@ -26,7 +26,6 @@ const QRCodeImage = ({ qrValue, containerRef, studentName }: QRCodeImageProps) =
                 img.onload = () => resolve(null);
                 img.onerror = () => resolve(null);
               }
-              // Ensure crossOrigin is set for all images
               img.crossOrigin = "anonymous";
             });
           })
@@ -69,7 +68,11 @@ const QRCodeImage = ({ qrValue, containerRef, studentName }: QRCodeImageProps) =
     generateQRCodePNG();
   }, [containerRef, studentName]);
 
-  return <QRCodeSVG value={qrValue} size={256} />;
+  return (
+    <div className="w-64 h-64 flex items-center justify-center">
+      <QRCodeSVG value={qrValue} size={256} />
+    </div>
+  );
 };
 
 export default QRCodeImage;

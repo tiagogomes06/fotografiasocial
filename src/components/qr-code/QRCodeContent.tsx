@@ -15,7 +15,6 @@ interface QRCodeContentProps {
 const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRCodeContentProps) => {
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
-  // Use window.location.origin to get the current domain
   const baseUrl = window.location.origin;
   const qrValue = `${baseUrl}/?code=${accessCode}`;
 
@@ -91,16 +90,11 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
         studentName={studentName}
       />
 
-      <div className="text-center space-y-3">
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Código de Acesso</span>
-          <span className="mx-2">:</span>
-          <span>{accessCode}</span>
+      <div className="text-sm text-gray-600 text-center space-y-1">
+        <p>
+          <span className="font-medium">Código de Acesso:</span>
+          <span className="ml-2">{accessCode}</span>
         </p>
-        <div className="text-sm text-gray-600">
-          <p className="font-medium">Site para</p>
-          <p>acesso : {new URL(qrValue).host}</p>
-        </div>
       </div>
     </div>
   );
