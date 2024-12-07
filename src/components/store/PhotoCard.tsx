@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import ProductSelect from "./ProductSelect";
 import { Product } from "@/types/admin";
 import { toast } from "sonner";
+import RetryImage from "../RetryImage";
 
 interface PhotoCardProps {
   photo: string;
@@ -30,12 +31,6 @@ const PhotoCard = ({
     if (!imageError) {
       onSelect(photo);
     }
-  };
-
-  const handleImageError = () => {
-    console.error("Failed to load image:", photo);
-    setImageError(true);
-    toast.error("Não foi possível carregar a imagem. Por favor, atualize a página.");
   };
 
   if (imageError) {
@@ -67,15 +62,20 @@ const PhotoCard = ({
         )}
         onClick={handleClick}
       >
-        <img
+        <RetryImage
           src={photo}
           alt="Fotografia"
           className="w-full h-full object-cover"
           onContextMenu={(e) => e.preventDefault()}
           draggable="false"
           crossOrigin="anonymous"
-          loading="lazy"
-          onError={handleImageError}
+          loading="eager"
+          onLoadError={() => {
+            setImageError(true);
+            toast.error("Não foi possível carregar a imagem");
+          }}
+          maxRetries={5}
+          retryDelay={1000}
         />
         {isSelected && (
           <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm animate-in fade-in-0" />

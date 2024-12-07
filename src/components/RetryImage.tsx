@@ -33,14 +33,18 @@ const RetryImage = ({
   const handleError = () => {
     console.error(`Erro ao carregar imagem (tentativa ${retries + 1}/${maxRetries}):`, {
       src: currentSrc,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
     });
 
     if (retries < maxRetries) {
       setTimeout(() => {
         setRetries(prev => prev + 1);
-        // Adiciona um timestamp para evitar cache
-        setCurrentSrc(`${src}?retry=${retries + 1}&t=${Date.now()}`);
+        // Adiciona parâmetros para evitar cache
+        const newSrc = new URL(src);
+        newSrc.searchParams.set('retry', (retries + 1).toString());
+        newSrc.searchParams.set('t', Date.now().toString());
+        setCurrentSrc(newSrc.toString());
         setError(false);
       }, retryDelay);
     } else {
