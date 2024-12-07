@@ -95,6 +95,7 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
           <span className="ml-2">{accessCode}</span>
         </p>
         <p>
+          <span className="font-medium">Site para acesso:</span>{" "}
           <a 
             href={qrValue}
             className="text-primary hover:underline"
