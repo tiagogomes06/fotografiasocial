@@ -12,8 +12,8 @@ const RetryImage = ({
   src,
   alt,
   className,
-  maxRetries = 10,
-  retryDelay = 500,
+  maxRetries = 5,
+  retryDelay = 1000,
   onLoadSuccess,
   onLoadError,
   ...props
@@ -21,22 +21,26 @@ const RetryImage = ({
   const [retries, setRetries] = useState(0);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentSrc, setCurrentSrc] = useState(src);
 
   useEffect(() => {
     setRetries(0);
     setError(false);
     setIsLoading(true);
+    setCurrentSrc(src);
   }, [src]);
 
   const handleError = () => {
     console.error(`Erro ao carregar imagem (tentativa ${retries + 1}/${maxRetries}):`, {
-      src,
+      src: currentSrc,
       timestamp: new Date().toISOString()
     });
 
     if (retries < maxRetries) {
       setTimeout(() => {
         setRetries(prev => prev + 1);
+        // Adiciona um timestamp para evitar cache
+        setCurrentSrc(`${src}?retry=${retries + 1}&t=${Date.now()}`);
         setError(false);
       }, retryDelay);
     } else {
@@ -68,7 +72,7 @@ const RetryImage = ({
         </div>
       )}
       <img
-        src={src}
+        src={currentSrc}
         alt={alt}
         className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         onError={handleError}
