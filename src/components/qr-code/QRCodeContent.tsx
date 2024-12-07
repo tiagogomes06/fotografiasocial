@@ -15,8 +15,7 @@ interface QRCodeContentProps {
 const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRCodeContentProps) => {
   const [schoolInfo, setSchoolInfo] = useState<{ schoolName: string; className: string }>();
   const [randomPhoto, setRandomPhoto] = useState<string>();
-  const baseUrl = window.location.origin;
-  const qrValue = `${baseUrl}/?code=${accessCode}`;
+  const qrValue = `https://fotografiasocial.duploefeito.com/?code=${accessCode}`;
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -94,6 +93,16 @@ const QRCodeContent = ({ studentId, studentName, accessCode, containerRef }: QRC
         <p>
           <span className="font-medium">Código de Acesso:</span>
           <span className="ml-2">{accessCode}</span>
+        </p>
+        <p>
+          <a 
+            href={qrValue}
+            className="text-primary hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            fotografiasocial.duploefeito.com
+          </a>
         </p>
       </div>
     </div>
